@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPageUrl } from "@/utils";
 import ContentDisplay from "../components/learning/ContentDisplay";
 import AnswerSubmission from "../components/learning/AnswerSubmission";
+import GenerationProgress from "../components/learning/GenerationProgress";
 import {
   buildContentGeneratorPrompt,
   buildGradingPrompt,
-  buildSummaryPushPrompt,
   buildConflictAvoidancePrompt
 } from "../components/learning/PromptEngine";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, ChevronRight, CheckCircle, AlertTriangle } from "lucide-react";
+import { useLang } from "../components/LanguageContext";
 
 export default function DailyCheckIn() {
   const urlParams = new URLSearchParams(window.location.search);
