@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Globe } from "lucide-react";
+import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X } from "lucide-react";
 import { LanguageProvider, useLang } from "./components/LanguageContext";
 import AuthGuard from "./components/AuthGuard";
 
