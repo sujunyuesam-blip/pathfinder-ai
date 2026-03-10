@@ -1,30 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPageUrl } from "@/utils";
 import ContentDisplay from "../components/learning/ContentDisplay";
 import AnswerSubmission from "../components/learning/AnswerSubmission";
-import GenerationProgress from "../components/learning/GenerationProgress";
 import {
   buildContentGeneratorPrompt,
   buildGradingPrompt,
+  buildSummaryPushPrompt,
   buildConflictAvoidancePrompt
 } from "../components/learning/PromptEngine";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, ChevronRight, CheckCircle, AlertTriangle } from "lucide-react";
-import { useLang } from "../components/LanguageContext";
 
 export default function DailyCheckIn() {
-  const { t } = useLang();
   const urlParams = new URLSearchParams(window.location.search);
   const recordIdParam = urlParams.get("record_id");
 
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [genStepIndex, setGenStepIndex] = useState(0);
-  const [genComplete, setGenComplete] = useState(false);
-  const [genSteps, setGenSteps] = useState([]);
+  const [genStatus, setGenStatus] = useState("");
   const [viewMode, setViewMode] = useState("content"); // content, answers, grading
 
   const { data: plans } = useQuery({
@@ -80,15 +76,11 @@ export default function DailyCheckIn() {
     let scenarioType = isConflict ? "conflict_avoidance" : "daily_checkin";
 
     if (isConflict) {
-      setGenSteps([t.genConflict]);
-      setGenStepIndex(0);
-      setGenComplete(false);
+      setGenStatus("🛡️ Generating conflict avoidance lightweight content...");
       const conflictPrompt = buildConflictAvoidancePrompt(plan, nextDay, errors);
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: conflictPrompt,
-        model: "gpt_5_mini",
       });
-      setGenComplete(true);
 
       await base44.entities.CheckInRecord.create({
         plan_id: plan.id,
@@ -115,31 +107,12 @@ export default function DailyCheckIn() {
         dayContext += `\n📈 SCHEDULE FIT RULE: User has ≥90% accuracy for 2 consecutive days. You may increase speed by 20% and merge adjacent same-topic knowledge points.`;
       }
 
-      // Step 1: Logic context via Gemini
-      setGenSteps([t.logicPlannerStep, t.contentGeneratorStep, t.summaryPushStep]);
-      setGenStepIndex(0);
-      setGenComplete(false);
-      // Enrich day context with Gemini (fast planner pass)
-      const logicContextResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Given this learning plan context, summarize what Day ${nextDay} should focus on in 200 words max:\n\n${dayContext}`,
-        model: "gemini_3_pro",
-      });
-
-      // Step 2: Claude generates the full lesson content
-      setGenStepIndex(1);
-      const contentPrompt = buildContentGeneratorPrompt(plan, logicContextResult, nextDay, errors);
+      setGenStatus("📚 Generating today's lesson content...");
+      const contentPrompt = buildContentGeneratorPrompt(plan, dayContext, nextDay, errors);
       const contentResult = await base44.integrations.Core.InvokeLLM({
         prompt: contentPrompt,
-        model: "claude_sonnet_4_6",
       });
-
-      // Step 3: GPT-5 mini formats/summarizes
-      setGenStepIndex(2);
-      const summaryResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Format this lesson cleanly in markdown for the student. Keep all content intact:\n\n${contentResult}`,
-        model: "gpt_5_mini",
-      });
-      setGenComplete(true);
+      const summaryResult = contentResult;
 
       await base44.entities.CheckInRecord.create({
         plan_id: plan.id,
@@ -176,15 +149,11 @@ export default function DailyCheckIn() {
     });
 
     // Run grading pipeline
-    setGenSteps([t.genGrading]);
-    setGenStepIndex(0);
-    setGenComplete(false);
+    setGenStatus("📊 Grading your answers...");
     const gradingPrompt = buildGradingPrompt(plan, currentRecord.content, answers.formatted, errors);
     const gradingResult = await base44.integrations.Core.InvokeLLM({
       prompt: gradingPrompt,
-      model: "claude_sonnet_4_6",
     });
-    setGenComplete(true);
     const summaryResult = gradingResult;
 
     // Parse accuracy and errors from grading result
@@ -251,9 +220,9 @@ export default function DailyCheckIn() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-500 mb-4">{t.noActivePlanFound}</p>
+          <p className="text-slate-500 mb-4">No active plan found</p>
           <Button onClick={() => window.location.href = createPageUrl("Setup")} className="bg-slate-800 text-white">
-            {t.createAPlan}
+            Create a Plan
           </Button>
         </div>
       </div>
@@ -270,7 +239,7 @@ export default function DailyCheckIn() {
             onClick={() => window.location.href = createPageUrl("Dashboard")}
             className="text-slate-500 gap-2"
           >
-            <ArrowLeft className="w-4 h-4" /> {t.dashboard}
+            <ArrowLeft className="w-4 h-4" /> Dashboard
           </Button>
           {currentRecord && (
             <div className="flex items-center gap-2">
@@ -280,9 +249,9 @@ export default function DailyCheckIn() {
                 currentRecord.status === 'pending_answers' ? 'bg-amber-100 text-amber-700' :
                 'bg-blue-100 text-blue-700'
               }>
-                {currentRecord.status === 'completed' ? t.statusDone :
-                 currentRecord.status === 'pending_answers' ? t.statusAwaiting :
-                 t.statusGrading}
+                {currentRecord.status === 'completed' ? '✅ Complete' :
+                 currentRecord.status === 'pending_answers' ? '📝 Awaiting Answers' :
+                 '📊 Grading'}
               </Badge>
             </div>
           )}
@@ -290,23 +259,18 @@ export default function DailyCheckIn() {
 
         {/* Loading state */}
         {loading && (
-          <div className="text-center py-12">
+          <div className="text-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-slate-400 mx-auto mb-4" />
-            {genSteps.length > 0 && (
-              <GenerationProgress
-                steps={genSteps}
-                currentStepIndex={genStepIndex}
-                isComplete={genComplete}
-              />
-            )}
+            <p className="text-slate-600">{genStatus}</p>
+            <p className="text-xs text-slate-400 mt-1">This may take a moment...</p>
           </div>
         )}
 
         {!loading && !currentRecord && (
           <div className="text-center py-16">
-            <p className="text-slate-500 mb-4">{t.readyToStart}</p>
+            <p className="text-slate-500 mb-4">Ready to start your first day of learning</p>
             <Button onClick={generateNewDay} className="bg-slate-800 text-white gap-2">
-              {t.generateDay1} <ChevronRight className="w-4 h-4" />
+              Generate Day 1 Content <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -316,9 +280,9 @@ export default function DailyCheckIn() {
             {/* Tab navigation */}
             <div className="flex gap-1 mb-6 bg-white rounded-lg p-1 shadow-sm">
               {[
-                { key: "content", label: t.lessonTab, show: true },
-                { key: "answers", label: t.submitAnswersTab, show: currentRecord.status === "pending_answers" },
-                { key: "grading", label: t.gradingTab, show: !!currentRecord.grading_result }
+                { key: "content", label: "📖 Lesson", show: true },
+                { key: "answers", label: "📝 Submit Answers", show: currentRecord.status === "pending_answers" },
+                { key: "grading", label: "📊 Grading Results", show: !!currentRecord.grading_result }
               ].filter(t => t.show).map(tab => (
                 <button
                   key={tab.key}
@@ -361,14 +325,14 @@ export default function DailyCheckIn() {
                         <AlertTriangle className="w-6 h-6 text-amber-500" />
                       )}
                       <div>
-                        <span className="text-sm text-slate-500">{t.basicLabel}</span>
+                        <span className="text-sm text-slate-500">Basic: </span>
                         <span className={`font-bold ${currentRecord.basic_accuracy >= 85 ? 'text-emerald-600' : currentRecord.basic_accuracy >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
                           {currentRecord.basic_accuracy}%
                         </span>
                       </div>
                       {currentRecord.advanced_accuracy != null && (
                         <div>
-                          <span className="text-sm text-slate-500">{t.advancedLabel}</span>
+                          <span className="text-sm text-slate-500">Advanced: </span>
                           <span className={`font-bold ${currentRecord.advanced_accuracy >= 75 ? 'text-emerald-600' : 'text-amber-600'}`}>
                             {currentRecord.advanced_accuracy}%
                           </span>
@@ -377,7 +341,7 @@ export default function DailyCheckIn() {
                     </div>
                     {currentRecord.basic_accuracy < 60 && (
                       <Badge className="bg-red-100 text-red-700">
-                        {t.consolidationWarning}
+                        ⚠️ Tomorrow: Consolidation Day
                       </Badge>
                     )}
                   </div>
@@ -396,7 +360,7 @@ export default function DailyCheckIn() {
                   disabled={loading}
                   className="bg-slate-800 hover:bg-slate-700 text-white gap-2 h-12 px-8"
                 >
-                  {t.generateDayN} {(plan.current_day || 0) + 1} {t.contentLabel} <ChevronRight className="w-4 h-4" />
+                  Generate Day {(plan.current_day || 0) + 1} Content <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             )}

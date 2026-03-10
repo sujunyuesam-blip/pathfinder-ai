@@ -1,5 +1,4 @@
 import React from "react";
-import { useLang } from "../components/LanguageContext";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPageUrl } from "@/utils";
@@ -11,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ErrorBookTable from "../components/learning/ErrorBookTable";
 
 export default function ErrorBook() {
-  const { t } = useLang();
   const [filter, setFilter] = React.useState("all");
   const [typeFilter, setTypeFilter] = React.useState("all");
   const queryClient = useQueryClient();
@@ -63,11 +61,11 @@ export default function ErrorBook() {
             onClick={() => window.location.href = createPageUrl("Dashboard")}
             className="text-slate-500 gap-2"
           >
-            <ArrowLeft className="w-4 h-4" /> {t.dashboard}
+            <ArrowLeft className="w-4 h-4" /> Dashboard
           </Button>
           <div className="flex items-center gap-2">
             <BookMarked className="w-5 h-5 text-red-500" />
-            <h1 className="text-xl font-bold text-slate-800">{t.errorsTitle}</h1>
+            <h1 className="text-xl font-bold text-slate-800">Error Book</h1>
             <Badge variant="outline">{errors.length} total</Badge>
           </div>
         </div>
@@ -77,7 +75,7 @@ export default function ErrorBook() {
           <Card className="border-0 shadow-sm mb-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-slate-500">
-                ⚠️ {t.highFreqPoints}
+                ⚠️ High-Frequency Error-Prone Knowledge Points
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -101,9 +99,9 @@ export default function ErrorBook() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t.filterAll}</SelectItem>
-                <SelectItem value="unreviewed">{t.filterPending}</SelectItem>
-                <SelectItem value="reviewed">{t.filterReviewed}</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="unreviewed">Unreviewed</SelectItem>
+                <SelectItem value="reviewed">Reviewed</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -112,9 +110,9 @@ export default function ErrorBook() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t.filterAll}</SelectItem>
-              <SelectItem value="basic">{t.filterBasic}</SelectItem>
-              <SelectItem value="advanced">{t.filterAdvanced}</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="basic">Basic (DR)</SelectItem>
+              <SelectItem value="advanced">Advanced (AS)</SelectItem>
             </SelectContent>
           </Select>
         </div>
