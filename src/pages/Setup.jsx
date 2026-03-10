@@ -3,39 +3,53 @@ import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
 import SetupForm from "../components/learning/SetupForm";
 import ContentDisplay from "../components/learning/ContentDisplay";
-import { buildLogicPlannerPrompt, buildContentGeneratorPrompt, buildSummaryPushPrompt } from "../components/learning/PromptEngine";
-import { Loader2, BookOpen } from "lucide-react";
+import GenerationProgress from "../components/learning/GenerationProgress";
+import { buildLogicPlannerPrompt, buildContentGeneratorPrompt } from "../components/learning/PromptEngine";
+import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLang } from "../components/LanguageContext";
 
 export default function Setup() {
+  const { t } = useLang();
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState("form"); // form, generating, preview
   const [generatedPlan, setGeneratedPlan] = useState("");
-  const [planData, setPlanData] = useState(null);
-  const [genStatus, setGenStatus] = useState("");
+  const [genStepIndex, setGenStepIndex] = useState(0);
+  const [genComplete, setGenComplete] = useState(false);
+
+  const STEPS = [t.logicPlannerStep, t.contentGeneratorStep, t.summaryPushStep];
 
   const handleSubmit = async (formData) => {
     setLoading(true);
     setStage("generating");
-    setPlanData(formData);
+    setGenStepIndex(0);
+    setGenComplete(false);
 
-    // Step 1: Logic Planner (Sub-prompt 1)
-    setGenStatus("🧠 Model 1/3: Logic Planner generating schedule and rules...");
+    // Step 1: Logic Planner — Gemini Pro (good at structured planning)
     const logicPrompt = buildLogicPlannerPrompt(formData);
     const logicResult = await base44.integrations.Core.InvokeLLM({
       prompt: logicPrompt,
+      model: "gemini_3_pro",
     });
 
-    // Step 2: Content Generator + Summary combined (Sub-prompt 2 & 3)
-    setGenStatus("📚 Model 2/2: Generating Day 1 content and formatting...");
+    // Step 2: Content Generator — Claude Sonnet (best at rich educational content)
+    setGenStepIndex(1);
     const dayPlan = extractDay1FromPlan(logicResult);
     const contentPrompt = buildContentGeneratorPrompt(formData, dayPlan, 1, []);
-    const [contentResult] = await Promise.all([
-      base44.integrations.Core.InvokeLLM({ prompt: contentPrompt })
-    ]);
+    const contentResult = await base44.integrations.Core.InvokeLLM({
+      prompt: contentPrompt,
+      model: "claude_sonnet_4_6",
+    });
 
-    const summaryResult = contentResult;
+    // Step 3: Summary & Push — GPT-5 mini (fast, good at formatting/summarizing)
+    setGenStepIndex(2);
+    const summaryPrompt = `You are a learning assistant. Format the following generated lesson content cleanly for the student. Keep all content intact but ensure clean markdown formatting with clear sections. Content:\n\n${contentResult}`;
+    const summaryResult = await base44.integrations.Core.InvokeLLM({
+      prompt: summaryPrompt,
+      model: "gpt_5_mini",
+    });
 
+    setGenComplete(true);
     setGeneratedPlan(summaryResult);
 
     // Save plan to database
@@ -77,12 +91,10 @@ export default function Setup() {
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-xs text-slate-500 mb-4">
             <BookOpen className="w-3 h-3" />
-            Learning Check-in Agent
+            {t.setupBadge}
           </div>
-          <h1 className="text-3xl font-bold text-slate-800">Set Up Your Learning Plan</h1>
-          <p className="text-slate-500 mt-2 max-w-md mx-auto">
-            Configure your study parameters and we'll generate a complete learning roadmap with daily check-ins
-          </p>
+          <h1 className="text-3xl font-bold text-slate-800">{t.setupTitle}</h1>
+          <p className="text-slate-500 mt-2 max-w-md mx-auto">{t.setupDesc}</p>
         </div>
 
         {stage === "form" && (
@@ -90,30 +102,19 @@ export default function Setup() {
         )}
 
         {stage === "generating" && (
-          <div className="text-center py-20">
-            <Loader2 className="w-10 h-10 animate-spin text-slate-400 mx-auto mb-6" />
-            <p className="text-lg text-slate-600 font-medium">{genStatus}</p>
-            <p className="text-sm text-slate-400 mt-2">
-              This runs a 3-model pipeline. Each model uses a different sub-prompt. Please wait...
-            </p>
-            <div className="mt-8 max-w-sm mx-auto">
-              <div className="flex items-center gap-3 text-left">
-                {["Logic Planner", "Content Generator", "Summary & Push"].map((name, i) => {
-                  const isActive = genStatus.includes(`${i + 1}/3`);
-                  const isDone = genStatus.includes(`${i + 2}/3`) || (i < 2 && genStatus.includes("3/3")) || stage === "preview";
-                  return (
-                    <div key={i} className="flex-1 text-center">
-                      <div className={`w-8 h-8 rounded-full mx-auto flex items-center justify-center text-xs font-bold transition-colors ${
-                        isDone ? 'bg-emerald-500 text-white' : isActive ? 'bg-slate-800 text-white animate-pulse' : 'bg-slate-200 text-slate-400'
-                      }`}>
-                        {i + 1}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1">{name}</p>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="text-center py-16">
+            <div className="text-4xl mb-4">
+              {genStepIndex === 0 ? '🧠' : genStepIndex === 1 ? '📚' : '✨'}
             </div>
+            <p className="text-lg text-slate-700 font-semibold mb-1">
+              {STEPS[genStepIndex]}
+            </p>
+            <p className="text-sm text-slate-400 mb-2">{t.waitMsg}</p>
+            <GenerationProgress
+              steps={STEPS}
+              currentStepIndex={genStepIndex}
+              isComplete={genComplete}
+            />
           </div>
         )}
 
@@ -127,7 +128,7 @@ export default function Setup() {
                 onClick={() => window.location.href = createPageUrl("Dashboard")}
                 className="bg-slate-800 hover:bg-slate-700 text-white h-12 px-8"
               >
-                Go to Dashboard →
+                {t.goToDashboard}
               </Button>
             </div>
           </div>
