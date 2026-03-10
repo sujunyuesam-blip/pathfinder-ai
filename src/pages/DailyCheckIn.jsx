@@ -262,7 +262,7 @@ export default function DailyCheckIn() {
           <div className="text-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-slate-400 mx-auto mb-4" />
             <p className="text-slate-600">{genStatus}</p>
-            <p className="text-xs text-slate-400 mt-1">Using non-default model (uses more integration credits)</p>
+            <p className="text-xs text-slate-400 mt-1">This may take a moment...</p>
           </div>
         )}
 
