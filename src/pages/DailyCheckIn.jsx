@@ -396,7 +396,7 @@ export default function DailyCheckIn() {
                   disabled={loading}
                   className="bg-slate-800 hover:bg-slate-700 text-white gap-2 h-12 px-8"
                 >
-                  Generate Day {(plan.current_day || 0) + 1} Content <ChevronRight className="w-4 h-4" />
+                  {t.generateDayN} {(plan.current_day || 0) + 1} {t.contentLabel} <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             )}
