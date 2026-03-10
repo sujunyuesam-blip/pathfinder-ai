@@ -81,6 +81,7 @@ export default function DailyCheckIn() {
       const conflictPrompt = buildConflictAvoidancePrompt(plan, nextDay, errors);
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: conflictPrompt,
+        model: "claude_sonnet_4_6"
       });
 
       await base44.entities.CheckInRecord.create({
@@ -108,10 +109,11 @@ export default function DailyCheckIn() {
         dayContext += `\n📈 SCHEDULE FIT RULE: User has ≥90% accuracy for 2 consecutive days. You may increase speed by 20% and merge adjacent same-topic knowledge points.`;
       }
 
-      setGenStatus("📚 Generating today's lesson content...");
+      setGenStatus("📚 Generating today's lesson content (Claude)...");
       const contentPrompt = buildContentGeneratorPrompt(plan, dayContext, nextDay, errors);
       const contentResult = await base44.integrations.Core.InvokeLLM({
         prompt: contentPrompt,
+        model: "claude_sonnet_4_6"
       });
       const summaryResult = contentResult;
 
@@ -154,6 +156,7 @@ export default function DailyCheckIn() {
     const gradingPrompt = buildGradingPrompt(plan, currentRecord.content, answers.formatted, errors);
     const gradingResult = await base44.integrations.Core.InvokeLLM({
       prompt: gradingPrompt,
+      model: "claude_sonnet_4_6"
     });
     const summaryResult = gradingResult;
 
