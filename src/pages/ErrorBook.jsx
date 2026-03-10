@@ -63,11 +63,11 @@ export default function ErrorBook() {
             onClick={() => window.location.href = createPageUrl("Dashboard")}
             className="text-slate-500 gap-2"
           >
-            <ArrowLeft className="w-4 h-4" /> Dashboard
+            <ArrowLeft className="w-4 h-4" /> {t.dashboard}
           </Button>
           <div className="flex items-center gap-2">
             <BookMarked className="w-5 h-5 text-red-500" />
-            <h1 className="text-xl font-bold text-slate-800">Error Book</h1>
+            <h1 className="text-xl font-bold text-slate-800">{t.errorsTitle}</h1>
             <Badge variant="outline">{errors.length} total</Badge>
           </div>
         </div>
@@ -77,7 +77,7 @@ export default function ErrorBook() {
           <Card className="border-0 shadow-sm mb-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-slate-500">
-                ⚠️ High-Frequency Error-Prone Knowledge Points
+                ⚠️ {t.highFreqPoints}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -101,9 +101,9 @@ export default function ErrorBook() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="unreviewed">Unreviewed</SelectItem>
-                <SelectItem value="reviewed">Reviewed</SelectItem>
+                <SelectItem value="all">{t.filterAll}</SelectItem>
+                <SelectItem value="unreviewed">{t.filterPending}</SelectItem>
+                <SelectItem value="reviewed">{t.filterReviewed}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -112,9 +112,9 @@ export default function ErrorBook() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="basic">Basic (DR)</SelectItem>
-              <SelectItem value="advanced">Advanced (AS)</SelectItem>
+              <SelectItem value="all">{t.filterAll}</SelectItem>
+              <SelectItem value="basic">{t.filterBasic}</SelectItem>
+              <SelectItem value="advanced">{t.filterAdvanced}</SelectItem>
             </SelectContent>
           </Select>
         </div>
