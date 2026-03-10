@@ -48,13 +48,13 @@ export default function Dashboard() {
           <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <BookOpen className="w-8 h-8 text-slate-400" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">No Active Learning Plan</h2>
-          <p className="text-slate-500 mb-6">Set up your first learning plan to get started</p>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">{t.noActivePlan}</h2>
+          <p className="text-slate-500 mb-6">{t.noActivePlanDesc}</p>
           <Button
             onClick={() => window.location.href = createPageUrl("Setup")}
             className="bg-slate-800 hover:bg-slate-700 text-white gap-2"
           >
-            <Plus className="w-4 h-4" /> Create Learning Plan
+            <Plus className="w-4 h-4" /> {t.createPlan}
           </Button>
         </div>
       </div>
