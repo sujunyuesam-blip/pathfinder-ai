@@ -270,7 +270,7 @@ export default function DailyCheckIn() {
             onClick={() => window.location.href = createPageUrl("Dashboard")}
             className="text-slate-500 gap-2"
           >
-            <ArrowLeft className="w-4 h-4" /> Dashboard
+            <ArrowLeft className="w-4 h-4" /> {t.dashboard}
           </Button>
           {currentRecord && (
             <div className="flex items-center gap-2">
