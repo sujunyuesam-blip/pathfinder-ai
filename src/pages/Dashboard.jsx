@@ -10,6 +10,7 @@ import { Loader2, BookOpen, Calendar, Target, ArrowRight, Plus, BarChart3, BookM
 import ProgressStats from "../components/learning/ProgressStats";
 
 export default function Dashboard() {
+  const { t } = useLang();
   const { data: plans, isLoading: plansLoading } = useQuery({
     queryKey: ['plans'],
     queryFn: () => base44.entities.LearningPlan.list('-created_date', 10),
