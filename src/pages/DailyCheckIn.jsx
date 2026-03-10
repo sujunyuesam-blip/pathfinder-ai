@@ -304,9 +304,9 @@ export default function DailyCheckIn() {
 
         {!loading && !currentRecord && (
           <div className="text-center py-16">
-            <p className="text-slate-500 mb-4">Ready to start your first day of learning</p>
+            <p className="text-slate-500 mb-4">{t.readyToStart}</p>
             <Button onClick={generateNewDay} className="bg-slate-800 text-white gap-2">
-              Generate Day 1 Content <ChevronRight className="w-4 h-4" />
+              {t.generateDay1} <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         )}
