@@ -377,7 +377,7 @@ export default function DailyCheckIn() {
                     </div>
                     {currentRecord.basic_accuracy < 60 && (
                       <Badge className="bg-red-100 text-red-700">
-                        ⚠️ Tomorrow: Consolidation Day
+                        {t.consolidationWarning}
                       </Badge>
                     )}
                   </div>
