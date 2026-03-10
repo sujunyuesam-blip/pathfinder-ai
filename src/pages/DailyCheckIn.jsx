@@ -16,12 +16,15 @@ import { Loader2, ArrowLeft, ChevronRight, CheckCircle, AlertTriangle } from "lu
 import { useLang } from "../components/LanguageContext";
 
 export default function DailyCheckIn() {
+  const { t } = useLang();
   const urlParams = new URLSearchParams(window.location.search);
   const recordIdParam = urlParams.get("record_id");
 
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [genStatus, setGenStatus] = useState("");
+  const [genStepIndex, setGenStepIndex] = useState(0);
+  const [genComplete, setGenComplete] = useState(false);
+  const [genSteps, setGenSteps] = useState([]);
   const [viewMode, setViewMode] = useState("content"); // content, answers, grading
 
   const { data: plans } = useQuery({
