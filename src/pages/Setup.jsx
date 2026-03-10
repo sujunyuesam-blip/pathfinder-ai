@@ -3,8 +3,9 @@ import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
 import SetupForm from "../components/learning/SetupForm";
 import ContentDisplay from "../components/learning/ContentDisplay";
-import { buildLogicPlannerPrompt, buildContentGeneratorPrompt, buildSummaryPushPrompt } from "../components/learning/PromptEngine";
-import { Loader2, BookOpen } from "lucide-react";
+import GeneratingProgress from "../components/learning/GeneratingProgress";
+import { buildLogicPlannerPrompt, buildContentGeneratorPrompt } from "../components/learning/PromptEngine";
+import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Setup() {
@@ -19,20 +20,22 @@ export default function Setup() {
     setStage("generating");
     setPlanData(formData);
 
-    // Step 1: Logic Planner (Sub-prompt 1)
-    setGenStatus("🧠 Model 1/3: Logic Planner generating schedule and rules...");
+    // Step 1: Logic Planner — Gemini Pro (best for structured long-form planning)
+    setGenStatus("🧠 Step 1/2: Logic Planner building your schedule...");
     const logicPrompt = buildLogicPlannerPrompt(formData);
     const logicResult = await base44.integrations.Core.InvokeLLM({
       prompt: logicPrompt,
+      model: "gemini_3_pro"
     });
 
-    // Step 2: Content Generator + Summary combined (Sub-prompt 2 & 3)
-    setGenStatus("📚 Model 2/2: Generating Day 1 content and formatting...");
+    // Step 2: Content Generator — Claude Sonnet (best for rich educational content)
+    setGenStatus("📚 Step 2/2: Generating Day 1 lesson content...");
     const dayPlan = extractDay1FromPlan(logicResult);
     const contentPrompt = buildContentGeneratorPrompt(formData, dayPlan, 1, []);
-    const [contentResult] = await Promise.all([
-      base44.integrations.Core.InvokeLLM({ prompt: contentPrompt })
-    ]);
+    const contentResult = await base44.integrations.Core.InvokeLLM({
+      prompt: contentPrompt,
+      model: "claude_sonnet_4_6"
+    });
 
     const summaryResult = contentResult;
 
