@@ -80,11 +80,15 @@ export default function DailyCheckIn() {
     let scenarioType = isConflict ? "conflict_avoidance" : "daily_checkin";
 
     if (isConflict) {
-      setGenStatus("🛡️ Generating conflict avoidance lightweight content...");
+      setGenSteps([t.genConflict]);
+      setGenStepIndex(0);
+      setGenComplete(false);
       const conflictPrompt = buildConflictAvoidancePrompt(plan, nextDay, errors);
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: conflictPrompt,
+        model: "gpt_5_mini",
       });
+      setGenComplete(true);
 
       await base44.entities.CheckInRecord.create({
         plan_id: plan.id,
