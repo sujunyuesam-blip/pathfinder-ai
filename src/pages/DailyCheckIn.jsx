@@ -115,12 +115,31 @@ export default function DailyCheckIn() {
         dayContext += `\n📈 SCHEDULE FIT RULE: User has ≥90% accuracy for 2 consecutive days. You may increase speed by 20% and merge adjacent same-topic knowledge points.`;
       }
 
-      setGenStatus("📚 Generating today's lesson content...");
-      const contentPrompt = buildContentGeneratorPrompt(plan, dayContext, nextDay, errors);
+      // Step 1: Logic context via Gemini
+      setGenSteps([t.logicPlannerStep, t.contentGeneratorStep, t.summaryPushStep]);
+      setGenStepIndex(0);
+      setGenComplete(false);
+      // Enrich day context with Gemini (fast planner pass)
+      const logicContextResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `Given this learning plan context, summarize what Day ${nextDay} should focus on in 200 words max:\n\n${dayContext}`,
+        model: "gemini_3_pro",
+      });
+
+      // Step 2: Claude generates the full lesson content
+      setGenStepIndex(1);
+      const contentPrompt = buildContentGeneratorPrompt(plan, logicContextResult, nextDay, errors);
       const contentResult = await base44.integrations.Core.InvokeLLM({
         prompt: contentPrompt,
+        model: "claude_sonnet_4_6",
       });
-      const summaryResult = contentResult;
+
+      // Step 3: GPT-5 mini formats/summarizes
+      setGenStepIndex(2);
+      const summaryResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `Format this lesson cleanly in markdown for the student. Keep all content intact:\n\n${contentResult}`,
+        model: "gpt_5_mini",
+      });
+      setGenComplete(true);
 
       await base44.entities.CheckInRecord.create({
         plan_id: plan.id,
