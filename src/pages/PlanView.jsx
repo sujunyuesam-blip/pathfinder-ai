@@ -56,7 +56,7 @@ export default function PlanView() {
 
             {plan.full_plan_content ? (
               <div className="bg-white rounded-xl shadow-sm p-6 md:p-10">
-                <ContentDisplay content={plan.full_plan_content} title="Full Learning Plan" />
+                <ContentDisplay content={plan.full_plan_content} title={t.viewFullPlan} />
               </div>
             ) : (
               <div className="text-center py-12 text-slate-400">
@@ -66,9 +66,9 @@ export default function PlanView() {
           </div>
         ) : (
           <div className="text-center py-16">
-            <p className="text-slate-500 mb-4">No plan found</p>
+            <p className="text-slate-500 mb-4">{t.noPlan}</p>
             <Button onClick={() => window.location.href = createPageUrl("Setup")} className="bg-slate-800 text-white">
-              Create a Plan
+              {t.goSetup}
             </Button>
           </div>
         )}
