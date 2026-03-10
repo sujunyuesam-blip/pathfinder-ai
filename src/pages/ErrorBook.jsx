@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ErrorBookTable from "../components/learning/ErrorBookTable";
 
 export default function ErrorBook() {
+  const { t } = useLang();
   const [filter, setFilter] = React.useState("all");
   const [typeFilter, setTypeFilter] = React.useState("all");
   const queryClient = useQueryClient();

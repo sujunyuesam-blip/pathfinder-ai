@@ -8,6 +8,7 @@ import { ArrowLeft, BookOpen } from "lucide-react";
 import ContentDisplay from "../components/learning/ContentDisplay";
 
 export default function PlanView() {
+  const { t } = useLang();
   const { data: plans, isLoading } = useQuery({
     queryKey: ['plans'],
     queryFn: () => base44.entities.LearningPlan.list('-created_date', 1),
