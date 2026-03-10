@@ -25,7 +25,7 @@ export default function PlanView() {
             onClick={() => window.location.href = createPageUrl("Dashboard")}
             className="text-slate-500 gap-2"
           >
-            <ArrowLeft className="w-4 h-4" /> Dashboard
+            <ArrowLeft className="w-4 h-4" /> {t.dashboard}
           </Button>
         </div>
 
@@ -37,8 +37,8 @@ export default function PlanView() {
                 <h1 className="text-2xl font-bold text-slate-800">{plan.program_name}</h1>
               </div>
               <div className="flex flex-wrap gap-4 text-sm text-slate-500">
-                <span>Duration: {plan.total_duration}</span>
-                <span>Daily: {plan.daily_available_minutes} min</span>
+                <span>{t.fieldDuration}: {plan.total_duration}</span>
+                <span>{t.dailyTime}: {plan.daily_available_minutes} min</span>
                 {plan.conflict_avoidance_start && (
                   <span>Conflict: {plan.conflict_avoidance_start} → {plan.conflict_avoidance_end}</span>
                 )}
@@ -47,11 +47,9 @@ export default function PlanView() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="bg-white rounded-xl p-4 shadow-sm">
-                <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Minimum Goal</p>
-                <p className="text-slate-700">{plan.minimum_goal}</p>
-              </div>
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Sprint Goal</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">{t.minimumGoal}</p>
+...
+                <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">{t.sprintGoal}</p>
                 <p className="text-slate-700">{plan.sprint_goal}</p>
               </div>
             </div>
