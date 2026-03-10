@@ -5,67 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Target, Shield, Clock, Calendar, ChevronRight, Zap } from "lucide-react";
-
-const FIELD_CONFIG = [
-  {
-    key: "program_name",
-    label: "Learning Program",
-    icon: BookOpen,
-    placeholder: "e.g. NEC Economics Competition, AP Macroeconomics, IB Mathematics AA HL, A-Level Chemistry AS",
-    description: "Full name including exam system",
-    type: "input"
-  },
-  {
-    key: "current_foundation",
-    label: "Current Foundation",
-    icon: Zap,
-    placeholder: "e.g. Completed AP Microeconomics full content, zero foundation, completed IGCSE core content",
-    description: "What you've mastered, completed stages, current level",
-    type: "textarea"
-  },
-  {
-    key: "total_duration",
-    label: "Planned Total Duration",
-    icon: Calendar,
-    placeholder: "e.g. 2 months (8 weeks), 3 months (12 weeks), 6 weeks",
-    description: "Total preparation period, accurate to weeks/months",
-    type: "input"
-  },
-  {
-    key: "start_date",
-    label: "Start Date",
-    icon: Calendar,
-    placeholder: "",
-    description: "When do you want to start?",
-    type: "date"
-  },
-  {
-    key: "minimum_goal",
-    label: "Minimum Goal",
-    icon: Target,
-    placeholder: "e.g. 100% coverage of DR Group test points, ≥85% daily accuracy, AP score of 5",
-    description: "Definite, quantifiable minimum target matching official standards",
-    type: "textarea"
-  },
-  {
-    key: "sprint_goal",
-    label: "Sprint Goal",
-    icon: Target,
-    placeholder: "e.g. 80% mastery of AS group advanced points, ≥75% accuracy, AP score of 5 in both subjects",
-    description: "Clear, quantifiable elevated target (must be higher than minimum)",
-    type: "textarea"
-  },
-  {
-    key: "daily_available_minutes",
-    label: "Daily Available Duration (minutes)",
-    icon: Clock,
-    placeholder: "e.g. 60",
-    description: "Fixed daily study time, accurate to minutes",
-    type: "number"
-  }
-];
+import { useLang } from "../LanguageContext";
 
 export default function SetupForm({ onSubmit, loading }) {
+  const { t } = useLang();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     program_name: "",
@@ -80,26 +23,29 @@ export default function SetupForm({ onSubmit, loading }) {
     daily_available_minutes: 60
   });
 
-  const handleChange = (key, value) => {
-    setForm(prev => ({ ...prev, [key]: value }));
-  };
+  const FIELD_CONFIG = [
+    { key: "program_name", label: t.fieldProgramName, icon: BookOpen, placeholder: t.fieldProgramPlaceholder, description: t.fieldProgramDesc, type: "input" },
+    { key: "current_foundation", label: t.fieldFoundation, icon: Zap, placeholder: t.fieldFoundationPlaceholder, description: t.fieldFoundationDesc, type: "textarea" },
+    { key: "total_duration", label: t.fieldDuration, icon: Calendar, placeholder: t.fieldDurationPlaceholder, description: t.fieldDurationDesc, type: "input" },
+    { key: "start_date", label: t.fieldStartDate, icon: Calendar, placeholder: "", description: t.fieldStartDateDesc, type: "date" },
+    { key: "minimum_goal", label: t.fieldMinGoal, icon: Target, placeholder: t.fieldMinGoalPlaceholder, description: t.fieldMinGoalDesc, type: "textarea" },
+    { key: "sprint_goal", label: t.fieldSprintGoal, icon: Target, placeholder: t.fieldSprintGoalPlaceholder, description: t.fieldSprintGoalDesc, type: "textarea" },
+    { key: "daily_available_minutes", label: t.fieldDailyMins, icon: Clock, placeholder: t.fieldDailyMinsPlaceholder, description: t.fieldDailyMinsDesc, type: "number" },
+  ];
+
+  const handleChange = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
 
   const isStepValid = () => {
     if (step < FIELD_CONFIG.length) {
       const field = FIELD_CONFIG[step];
       return form[field.key] !== "" && form[field.key] !== undefined;
     }
-    return true; // conflict avoidance step is optional
+    return true;
   };
 
-  const totalSteps = FIELD_CONFIG.length + 1; // +1 for conflict avoidance
-
-  const handleSubmit = () => {
-    onSubmit(form);
-  };
+  const totalSteps = FIELD_CONFIG.length + 1;
 
   const renderField = (config) => {
-    const Icon = config.icon;
     if (config.type === "textarea") {
       return (
         <Textarea
@@ -148,7 +94,7 @@ export default function SetupForm({ onSubmit, loading }) {
       {/* Progress bar */}
       <div className="mb-8">
         <div className="flex justify-between text-xs text-slate-400 mb-2">
-          <span>Step {step + 1} of {totalSteps}</span>
+          <span>{t.stepLabel} {step + 1} {t.ofLabel} {totalSteps}</span>
           <span>{Math.round(((step + 1) / totalSteps) * 100)}%</span>
         </div>
         <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
@@ -179,72 +125,40 @@ export default function SetupForm({ onSubmit, loading }) {
           <CardHeader className="pb-4">
             <div className="flex items-center gap-3 mb-2">
               <Shield className="w-5 h-5 text-slate-600" />
-              <CardTitle className="text-xl font-semibold text-slate-800">
-                Conflict Avoidance Period
-              </CardTitle>
+              <CardTitle className="text-xl font-semibold text-slate-800">{t.conflictTitle}</CardTitle>
             </div>
-            <p className="text-sm text-slate-500">
-              Specify any time periods where you need to avoid intensive study (e.g., major exams, school events). Optional.
-            </p>
+            <p className="text-sm text-slate-500">{t.conflictDesc}</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm text-slate-600">Start Date</Label>
-                <Input
-                  type="date"
-                  value={form.conflict_avoidance_start}
-                  onChange={(e) => handleChange("conflict_avoidance_start", e.target.value)}
-                  className="border-slate-200"
-                />
+                <Label className="text-sm text-slate-600">{t.conflictStartDate}</Label>
+                <Input type="date" value={form.conflict_avoidance_start} onChange={(e) => handleChange("conflict_avoidance_start", e.target.value)} className="border-slate-200" />
               </div>
               <div>
-                <Label className="text-sm text-slate-600">End Date</Label>
-                <Input
-                  type="date"
-                  value={form.conflict_avoidance_end}
-                  onChange={(e) => handleChange("conflict_avoidance_end", e.target.value)}
-                  className="border-slate-200"
-                />
+                <Label className="text-sm text-slate-600">{t.conflictEndDate}</Label>
+                <Input type="date" value={form.conflict_avoidance_end} onChange={(e) => handleChange("conflict_avoidance_end", e.target.value)} className="border-slate-200" />
               </div>
             </div>
             <div>
-              <Label className="text-sm text-slate-600">Reason</Label>
-              <Input
-                value={form.conflict_reason}
-                onChange={(e) => handleChange("conflict_reason", e.target.value)}
-                placeholder="e.g. AP major exam period, school mock exams"
-                className="border-slate-200"
-              />
+              <Label className="text-sm text-slate-600">{t.conflictReason}</Label>
+              <Input value={form.conflict_reason} onChange={(e) => handleChange("conflict_reason", e.target.value)} placeholder={t.conflictReasonPlaceholder} className="border-slate-200" />
             </div>
           </CardContent>
         </Card>
       )}
 
       <div className="flex justify-between mt-6">
-        <Button
-          variant="ghost"
-          onClick={() => setStep(Math.max(0, step - 1))}
-          disabled={step === 0}
-          className="text-slate-500"
-        >
-          Back
+        <Button variant="ghost" onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} className="text-slate-500">
+          {t.back}
         </Button>
         {step < totalSteps - 1 ? (
-          <Button
-            onClick={() => setStep(step + 1)}
-            disabled={!isStepValid()}
-            className="bg-slate-800 hover:bg-slate-700 text-white gap-2"
-          >
-            Continue <ChevronRight className="w-4 h-4" />
+          <Button onClick={() => setStep(step + 1)} disabled={!isStepValid()} className="bg-slate-800 hover:bg-slate-700 text-white gap-2">
+            {t.continue} <ChevronRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="bg-slate-800 hover:bg-slate-700 text-white gap-2"
-          >
-            {loading ? "Generating Plan..." : "Generate Learning Plan"}
+          <Button onClick={() => onSubmit(form)} disabled={loading} className="bg-slate-800 hover:bg-slate-700 text-white gap-2">
+            {loading ? t.generatingPlan : t.generatePlan}
             <ChevronRight className="w-4 h-4" />
           </Button>
         )}
