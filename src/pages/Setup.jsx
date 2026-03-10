@@ -93,31 +93,12 @@ export default function Setup() {
         )}
 
         {stage === "generating" && (
-          <div className="text-center py-20">
-            <Loader2 className="w-10 h-10 animate-spin text-slate-400 mx-auto mb-6" />
-            <p className="text-lg text-slate-600 font-medium">{genStatus}</p>
-            <p className="text-sm text-slate-400 mt-2">
-              This runs a 3-model pipeline. Each model uses a different sub-prompt. Please wait...
-            </p>
-            <div className="mt-8 max-w-sm mx-auto">
-              <div className="flex items-center gap-3 text-left">
-                {["Logic Planner", "Content Generator", "Summary & Push"].map((name, i) => {
-                  const isActive = genStatus.includes(`${i + 1}/3`);
-                  const isDone = genStatus.includes(`${i + 2}/3`) || (i < 2 && genStatus.includes("3/3")) || stage === "preview";
-                  return (
-                    <div key={i} className="flex-1 text-center">
-                      <div className={`w-8 h-8 rounded-full mx-auto flex items-center justify-center text-xs font-bold transition-colors ${
-                        isDone ? 'bg-emerald-500 text-white' : isActive ? 'bg-slate-800 text-white animate-pulse' : 'bg-slate-200 text-slate-400'
-                      }`}>
-                        {i + 1}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1">{name}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          <GeneratingProgress
+            active={true}
+            label={genStatus}
+            subLabel="Using Gemini Pro for planning + Claude Sonnet for content. Please wait..."
+            durationSeconds={70}
+          />
         )}
 
         {stage === "preview" && (
