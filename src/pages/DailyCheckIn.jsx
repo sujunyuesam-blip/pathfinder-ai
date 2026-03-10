@@ -176,11 +176,15 @@ export default function DailyCheckIn() {
     });
 
     // Run grading pipeline
-    setGenStatus("📊 Grading your answers...");
+    setGenSteps([t.genGrading]);
+    setGenStepIndex(0);
+    setGenComplete(false);
     const gradingPrompt = buildGradingPrompt(plan, currentRecord.content, answers.formatted, errors);
     const gradingResult = await base44.integrations.Core.InvokeLLM({
       prompt: gradingPrompt,
+      model: "claude_sonnet_4_6",
     });
+    setGenComplete(true);
     const summaryResult = gradingResult;
 
     // Parse accuracy and errors from grading result
