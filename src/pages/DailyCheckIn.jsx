@@ -251,9 +251,9 @@ export default function DailyCheckIn() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-500 mb-4">No active plan found</p>
+          <p className="text-slate-500 mb-4">{t.noActivePlanFound}</p>
           <Button onClick={() => window.location.href = createPageUrl("Setup")} className="bg-slate-800 text-white">
-            Create a Plan
+            {t.createAPlan}
           </Button>
         </div>
       </div>
