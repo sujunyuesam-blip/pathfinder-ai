@@ -1,23 +1,19 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Globe } from "lucide-react";
-import { LanguageProvider, useLang } from "./components/LanguageContext";
+import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X } from "lucide-react";
 import AuthGuard from "./components/AuthGuard";
 
 const NAV_ITEMS = [
-  { nameKey: "dashboard", icon: LayoutDashboard, page: "Dashboard" },
-  { nameKey: "dailyCheckin", icon: Calendar, page: "DailyCheckIn" },
-  { nameKey: "errorBook", icon: BookMarked, page: "ErrorBook" },
-  { nameKey: "fullPlan", icon: Map, page: "PlanView" },
+  { name: "Dashboard", icon: LayoutDashboard, page: "Dashboard" },
+  { name: "Daily Check-in", icon: Calendar, page: "DailyCheckIn" },
+  { name: "Error Book", icon: BookMarked, page: "ErrorBook" },
+  { name: "Full Plan", icon: Map, page: "PlanView" },
 ];
 
 function LayoutInner({ children, currentPageName }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  // React.useState is used via React.useState above - no separate import needed
-  const { t, toggleLang } = useLang();
 
-  // Hide sidebar on setup page
   if (currentPageName === "Setup") {
     return <>{children}</>;
   }
@@ -31,7 +27,7 @@ function LayoutInner({ children, currentPageName }) {
             <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
               <BookOpen className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-slate-800 text-lg">{t.appName}</span>
+            <span className="font-bold text-slate-800 text-lg">LearnAgent</span>
           </Link>
         </div>
         <nav className="flex-1 p-4 space-y-1">
@@ -48,24 +44,18 @@ function LayoutInner({ children, currentPageName }) {
                 }`}
               >
                 <item.icon className="w-4 h-4" />
-                {t[item.nameKey]}
+                {item.name}
               </Link>
             );
           })}
         </nav>
-        <div className="p-4 border-t border-slate-100 space-y-2">
+        <div className="p-4 border-t border-slate-100">
           <Link
             to={createPageUrl("Setup")}
-            className="flex items-center gap-2 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+            className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
           >
-            {t.newPlan}
+            + New Learning Plan
           </Link>
-          <button
-            onClick={toggleLang}
-            className="flex items-center gap-2 text-xs text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <Globe className="w-3 h-3" /> {t.language}
-          </button>
         </div>
       </aside>
 
@@ -75,16 +65,11 @@ function LayoutInner({ children, currentPageName }) {
           <div className="w-7 h-7 bg-slate-800 rounded-lg flex items-center justify-center">
             <BookOpen className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="font-bold text-slate-800">{t.appName}</span>
+          <span className="font-bold text-slate-800">LearnAgent</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <button onClick={toggleLang} className="text-xs px-2 py-1 border border-slate-200 rounded-full text-slate-500">
-            {t.language}
-          </button>
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2">
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2">
+          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
       </div>
 
       {/* Mobile menu overlay */}
@@ -104,7 +89,7 @@ function LayoutInner({ children, currentPageName }) {
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
-                    {t[item.nameKey]}
+                    {item.name}
                   </Link>
                 );
               })}
@@ -123,12 +108,10 @@ function LayoutInner({ children, currentPageName }) {
 
 export default function Layout({ children, currentPageName }) {
   return (
-    <LanguageProvider>
-      <AuthGuard>
-        <LayoutInner currentPageName={currentPageName}>
-          {children}
-        </LayoutInner>
-      </AuthGuard>
-    </LanguageProvider>
+    <AuthGuard>
+      <LayoutInner currentPageName={currentPageName}>
+        {children}
+      </LayoutInner>
+    </AuthGuard>
   );
 }
