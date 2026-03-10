@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, ChevronRight, CheckCircle, AlertTriangle } from "lucide-react";
+import GeneratingProgress from "../components/learning/GeneratingProgress";
 
 export default function DailyCheckIn() {
   const urlParams = new URLSearchParams(window.location.search);
