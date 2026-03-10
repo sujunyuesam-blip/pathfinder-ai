@@ -14,6 +14,7 @@ const NAV_ITEMS = [
 
 function LayoutInner({ children, currentPageName }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  // React.useState is used via React.useState above - no separate import needed
   const { t, toggleLang } = useLang();
 
   // Hide sidebar on setup page
