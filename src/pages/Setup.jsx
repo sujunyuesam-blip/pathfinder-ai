@@ -24,25 +24,17 @@ export default function Setup() {
     const logicPrompt = buildLogicPlannerPrompt(formData);
     const logicResult = await base44.integrations.Core.InvokeLLM({
       prompt: logicPrompt,
-      model: "claude_sonnet_4_6"
     });
 
-    // Step 2: Content Generator (Sub-prompt 2) - Day 1 content
-    setGenStatus("📚 Model 2/3: Content Generator producing Day 1 knowledge points and questions...");
+    // Step 2: Content Generator + Summary combined (Sub-prompt 2 & 3)
+    setGenStatus("📚 Model 2/2: Generating Day 1 content and formatting...");
     const dayPlan = extractDay1FromPlan(logicResult);
     const contentPrompt = buildContentGeneratorPrompt(formData, dayPlan, 1, []);
-    const contentResult = await base44.integrations.Core.InvokeLLM({
-      prompt: contentPrompt,
-      model: "claude_sonnet_4_6"
-    });
+    const [contentResult] = await Promise.all([
+      base44.integrations.Core.InvokeLLM({ prompt: contentPrompt })
+    ]);
 
-    // Step 3: Summary & Push (Sub-prompt 3)
-    setGenStatus("✨ Model 3/3: Summary model integrating and formatting final output...");
-    const summaryPrompt = buildSummaryPushPrompt(logicResult, contentResult, "Scenario 1: Initial full-cycle learning plan + Day 1 content");
-    const summaryResult = await base44.integrations.Core.InvokeLLM({
-      prompt: summaryPrompt,
-      model: "claude_sonnet_4_6"
-    });
+    const summaryResult = contentResult;
 
     setGeneratedPlan(summaryResult);
 

@@ -80,7 +80,6 @@ export default function DailyCheckIn() {
       const conflictPrompt = buildConflictAvoidancePrompt(plan, nextDay, errors);
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: conflictPrompt,
-        model: "claude_sonnet_4_6"
       });
 
       await base44.entities.CheckInRecord.create({
