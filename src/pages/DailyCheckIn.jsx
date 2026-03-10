@@ -280,9 +280,9 @@ export default function DailyCheckIn() {
                 currentRecord.status === 'pending_answers' ? 'bg-amber-100 text-amber-700' :
                 'bg-blue-100 text-blue-700'
               }>
-                {currentRecord.status === 'completed' ? '✅ Complete' :
-                 currentRecord.status === 'pending_answers' ? '📝 Awaiting Answers' :
-                 '📊 Grading'}
+                {currentRecord.status === 'completed' ? t.statusDone :
+                 currentRecord.status === 'pending_answers' ? t.statusAwaiting :
+                 t.statusGrading}
               </Badge>
             </div>
           )}
