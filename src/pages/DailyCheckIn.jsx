@@ -361,14 +361,14 @@ export default function DailyCheckIn() {
                         <AlertTriangle className="w-6 h-6 text-amber-500" />
                       )}
                       <div>
-                        <span className="text-sm text-slate-500">Basic: </span>
+                        <span className="text-sm text-slate-500">{t.basicLabel}</span>
                         <span className={`font-bold ${currentRecord.basic_accuracy >= 85 ? 'text-emerald-600' : currentRecord.basic_accuracy >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
                           {currentRecord.basic_accuracy}%
                         </span>
                       </div>
                       {currentRecord.advanced_accuracy != null && (
                         <div>
-                          <span className="text-sm text-slate-500">Advanced: </span>
+                          <span className="text-sm text-slate-500">{t.advancedLabel}</span>
                           <span className={`font-bold ${currentRecord.advanced_accuracy >= 75 ? 'text-emerald-600' : 'text-amber-600'}`}>
                             {currentRecord.advanced_accuracy}%
                           </span>
