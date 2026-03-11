@@ -105,6 +105,71 @@ ${ctx}
 After output, self-check against all 8 checklist items. If any fail, regenerate.`;
 }
 
+// SUB-PROMPT 1B: Plan Auditor — validates logic planner output against all red-line rules
+export function buildPlanAuditorPrompt(plan, logicPlanOutput) {
+  const ctx = buildUserContext(plan);
+  return `You are a strict quality auditor for learning plans. Your ONLY job is to audit the plan from the Logic Planner against the 7 red-line rules and output a corrected, validated plan.
+
+=== USER PARAMETERS ===
+${ctx}
+
+=== LOGIC PLANNER OUTPUT TO AUDIT ===
+${logicPlanOutput}
+
+=== YOUR AUDIT CHECKLIST (check each rule — mark PASS or FAIL with reason) ===
+Rule 1 — LECTURE BEFORE PRACTICE: All practice sessions only cover already-explained knowledge. No preview questions.
+Rule 2 — DOUBLE GOAL GRADING: Every knowledge point and question is clearly tagged minimum-goal or sprint-goal.
+Rule 3 — ERROR CLOSED-LOOP: Error book format is defined; correction workflow is specified.
+Rule 4 — CONFLICT AVOIDANCE: Zero new knowledge points in conflict period (${plan.conflict_avoidance_start || 'N/A'} – ${plan.conflict_avoidance_end || 'N/A'}). All KPs covered BEFORE conflict starts.
+Rule 5 — FIXED FORMAT: Plan uses correct markdown structure with all required sections.
+Rule 6 — SCHEDULE FIT: Daily pacing fits ${plan.daily_available_minutes} minutes. Acceleration/consolidation triggers are defined.
+Rule 7 — NO REDUNDANT CONTENT: No motivational filler, no off-topic extensions.
+
+=== YOUR OUTPUT ===
+
+## Audit Report
+| Rule | Status | Issue Found | Correction Applied |
+|------|--------|------------|-------------------|
+(one row per rule)
+
+## Corrected Full Plan
+(Output the COMPLETE corrected plan. If no corrections needed for a section, reproduce it unchanged. Do NOT truncate or summarize — output the full plan.)
+
+## Day 1 Knowledge Point Themes (Extracted)
+(List ONLY the Day 1 knowledge point topics from the corrected plan, clearly tagged minimum/sprint. This will be passed directly to the content generator.)
+
+## Risk Flags for Content Generator
+(List any edge cases, user-specific nuances, or easily-misunderstood points the content generator MUST watch out for.)`;
+}
+
+// SUB-PROMPT 3B: Content Verifier — cross-checks generated content for hallucinations
+export function buildContentVerifierPrompt(plan, dayContent) {
+  return `You are a final quality gate for educational content. You ONLY verify and fix — you do NOT re-teach or expand.
+
+=== VERIFICATION CHECKLIST ===
+1. LECTURE-PRACTICE ALIGNMENT: For EACH practice question, confirm it is 100% answerable from the knowledge explanations in Section 2 of this same document. Flag any question that requires knowledge NOT explained today.
+2. QUESTION COUNT: Confirm exactly 10 basic questions and 5 advanced questions are present.
+3. GOAL TAGGING: Confirm all knowledge points are tagged ⭐ (minimum) or 🚀 (sprint). Flag any untagged content.
+4. ANSWER FORMAT BLOCK: Confirm the answer submission template at the end is present and correctly formatted.
+5. CONSISTENCY: Confirm the "Tomorrow's Preview" section contains topic names only — no questions, no explanations.
+
+=== CONTENT TO VERIFY ===
+${dayContent}
+
+=== YOUR OUTPUT ===
+
+## Verification Report
+| Check | Status | Issues Found |
+|-------|--------|-------------|
+(one row per check above)
+
+## Overall Verdict
+PASS or FAIL (with summary)
+
+## Verified & Corrected Content
+(Output the COMPLETE content. Apply only the minimum corrections needed. If no issues, reproduce the content exactly. Do NOT add new content, do NOT expand explanations, do NOT change question difficulty.)`;
+}
+
 // SUB-PROMPT 2: Content Generation Model
 export function buildContentGeneratorPrompt(plan, dayPlan, dayNumber, errorHistory = []) {
   const ctx = buildUserContext(plan);
