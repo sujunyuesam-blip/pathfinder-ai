@@ -126,8 +126,8 @@ export default function Setup() {
           <GeneratingProgress
             active={true}
             label={genStatus}
-            subLabel="Using Gemini Pro for planning + Claude Sonnet for content. Please wait..."
-            durationSeconds={70}
+            subLabel="4-step pipeline: Logic Planner → Plan Auditor → Content Generator → Content Verifier"
+            durationSeconds={120}
           />
         )}
 
