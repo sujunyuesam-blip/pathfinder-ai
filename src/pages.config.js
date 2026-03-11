@@ -52,6 +52,7 @@ import Dashboard from './pages/Dashboard';
 import ErrorBook from './pages/ErrorBook';
 import PlanView from './pages/PlanView';
 import Setup from './pages/Setup';
+import SocraticChat from './pages/SocraticChat';
 import __Layout from './Layout.jsx';
 
 
@@ -61,6 +62,7 @@ export const PAGES = {
     "ErrorBook": ErrorBook,
     "PlanView": PlanView,
     "Setup": Setup,
+    "SocraticChat": SocraticChat,
 }
 
 export const pagesConfig = {
