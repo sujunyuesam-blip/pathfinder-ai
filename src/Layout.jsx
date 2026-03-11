@@ -7,6 +7,7 @@ import AuthGuard from "./components/AuthGuard";
 const NAV_ITEMS = [
   { name: "Dashboard", icon: LayoutDashboard, page: "Dashboard" },
   { name: "Daily Check-in", icon: Calendar, page: "DailyCheckIn" },
+  { name: "Socratic Guide", icon: Sparkles, page: "SocraticChat" },
   { name: "Error Book", icon: BookMarked, page: "ErrorBook" },
   { name: "Full Plan", icon: Map, page: "PlanView" },
 ];
