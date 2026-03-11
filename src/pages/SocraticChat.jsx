@@ -108,7 +108,7 @@ export default function SocraticChat() {
 
     const updated = await base44.agents.addMessage(conv, { role: "user", content: contextMsg });
     setConversation(updated);
-    setMessages(updated.messages.filter(m => !(m.role === "user" && m.content?.startsWith("Context:"))));
+    setMessages((updated?.messages || []).filter(m => !(m.role === "user" && m.content?.startsWith("Context:"))));
     setInitializing(false);
 
     const unsubscribe = base44.agents.subscribeToConversation(updated.id, (data) => {
