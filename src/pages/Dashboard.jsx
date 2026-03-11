@@ -268,5 +268,8 @@ export default function Dashboard() {
         )}
       </div>
     </div>
+
+    {/* Floating Socratic Chat Panel */}
+    <SocraticChatPanel activePlan={activePlan} />
   );
 }
