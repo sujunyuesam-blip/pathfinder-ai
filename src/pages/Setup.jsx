@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import SetupForm from "../components/learning/SetupForm";
 import ContentDisplay from "../components/learning/ContentDisplay";
 import GeneratingProgress from "../components/learning/GeneratingProgress";
-import { buildLogicPlannerPrompt, buildContentGeneratorPrompt } from "../components/learning/PromptEngine";
+import { buildLogicPlannerPrompt, buildPlanAuditorPrompt, buildContentGeneratorPrompt, buildContentVerifierPrompt } from "../components/learning/PromptEngine";
 import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
