@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 function LayoutInner({ children, currentPageName }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
-  if (currentPageName === "Setup") {
+  if (currentPageName === "Setup" || currentPageName === "SocraticChat") {
     return <>{children}</>;
   }
 
