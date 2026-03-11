@@ -146,6 +146,28 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Socratic Guide Banner */}
+        <Card
+          className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-100"
+          onClick={() => window.location.href = createPageUrl("SocraticChat")}
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-6 h-6 text-violet-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-slate-700">Socratic Learning Guide</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Stuck on a concept? Explore it through Socratic dialogue — both you and the AI grow together, step by step.
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <ArrowRight className="w-4 h-4 text-violet-400" />
+              <span className="text-xs text-violet-500 font-medium">Open Chat</span>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Goals */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="border-0 shadow-sm">
