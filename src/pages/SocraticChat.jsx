@@ -122,8 +122,13 @@ export default function SocraticChat() {
     const text = input.trim();
     setInput("");
     setSending(true);
-    const updated = await base44.agents.addMessage(conversation, { role: "user", content: text });
-    setConversation(updated);
+    try {
+      const updated = await base44.agents.addMessage(conversation, { role: "user", content: text });
+      setConversation(updated);
+    } catch (e) {
+      // Conversation no longer exists — reinitialize
+      await initConversation();
+    }
     setSending(false);
     setTimeout(() => inputRef.current?.focus(), 100);
   };
