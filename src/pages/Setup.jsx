@@ -71,10 +71,10 @@ export default function Setup() {
 
     setGeneratedPlan(summaryResult);
 
-    // Save plan to database
+    // Save plan to database (use auditor-corrected plan)
     const plan = await base44.entities.LearningPlan.create({
       ...formData,
-      full_plan_content: logicResult,
+      full_plan_content: correctedPlan,
       current_day: 1,
       current_phase: "intensive",
       status: "active"
