@@ -112,7 +112,7 @@ export default function SocraticChat() {
     setInitializing(false);
 
     const unsubscribe = base44.agents.subscribeToConversation(updated.id, (data) => {
-      setMessages(data.messages.filter(m => !(m.role === "user" && m.content?.startsWith("Context:"))));
+      setMessages((data?.messages || []).filter(m => !(m.role === "user" && m.content?.startsWith("Context:"))));
     });
     return () => unsubscribe();
   };
