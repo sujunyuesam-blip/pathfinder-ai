@@ -101,11 +101,18 @@ export default function SocraticChatPanel({ activePlan }) {
     const text = input.trim();
     setInput("");
     setSending(true);
-    const updated = await base44.agents.addMessage(conversation, {
-      role: "user",
-      content: text,
-    });
-    setConversation(updated);
+    try {
+      const updated = await base44.agents.addMessage(conversation, {
+        role: "user",
+        content: text,
+      });
+      setConversation(updated);
+    } catch (e) {
+      // Conversation no longer exists — reinitialize
+      setConversation(null);
+      setMessages([]);
+      await startConversation();
+    }
     setSending(false);
     setTimeout(() => inputRef.current?.focus(), 100);
   };
