@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Sparkles } from "lucide-react";
+import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Sparkles, ShieldCheck } from "lucide-react";
 import AuthGuard from "./components/AuthGuard";
 
 const NAV_ITEMS = [
