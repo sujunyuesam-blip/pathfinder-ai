@@ -71,6 +71,7 @@ export default function SocraticChat() {
   const [tipIndex, setTipIndex] = useState(0);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const unsubscribeRef = useRef(null);
 
   const { data: plans } = useQuery({
     queryKey: ['plans'],
