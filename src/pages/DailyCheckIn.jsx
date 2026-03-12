@@ -1,19 +1,79 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPageUrl } from "@/utils";
 import ContentDisplay from "../components/learning/ContentDisplay";
 import AnswerSubmission from "../components/learning/AnswerSubmission";
 import {
   buildContentGeneratorPrompt,
   buildGradingPrompt,
-  buildSummaryPushPrompt,
   buildConflictAvoidancePrompt
 } from "../components/learning/PromptEngine";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, ChevronRight, CheckCircle, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowLeft, ChevronRight, Zap, Flame, Shield, Trophy, Star, Target, Swords } from "lucide-react";
 import GeneratingProgress from "../components/learning/GeneratingProgress";
+
+function XPBar({ current, max, label }) {
+  const pct = Math.min(100, Math.round((current / max) * 100));
+  return (
+    <div className="w-full">
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-amber-700 font-semibold">{label}</span>
+        <span className="text-amber-600 font-mono">{current}/{max} XP</span>
+      </div>
+      <div className="h-3 bg-amber-100 rounded-full overflow-hidden border border-amber-200">
+        <div
+          className="h-full bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full transition-all duration-1000"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function AccuracyBar({ value, label, color }) {
+  const pct = value || 0;
+  return (
+    <div className="flex-1">
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-slate-500">{label}</span>
+        <span className={`font-bold font-mono ${color}`}>{pct}%</span>
+      </div>
+      <div className="h-4 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+        <div
+          className={`h-full rounded-full transition-all duration-1000 ${
+            pct >= 85 ? 'bg-gradient-to-r from-emerald-400 to-green-500' :
+            pct >= 60 ? 'bg-gradient-to-r from-amber-400 to-yellow-500' :
+            'bg-gradient-to-r from-red-400 to-rose-500'
+          }`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function MissionBadge({ status, day }) {
+  if (status === 'completed') return (
+    <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-100 border border-emerald-300 rounded-full">
+      <Trophy className="w-3.5 h-3.5 text-emerald-600" />
+      <span className="text-xs font-bold text-emerald-700">MISSION COMPLETE</span>
+    </div>
+  );
+  if (status === 'pending_answers') return (
+    <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 border border-amber-300 rounded-full">
+      <Swords className="w-3.5 h-3.5 text-amber-600" />
+      <span className="text-xs font-bold text-amber-700">AWAITING COMBAT</span>
+    </div>
+  );
+  return (
+    <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-100 border border-blue-300 rounded-full">
+      <Star className="w-3.5 h-3.5 text-blue-600" />
+      <span className="text-xs font-bold text-blue-700">DAY {day}</span>
+    </div>
+  );
+}
 
 export default function DailyCheckIn() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -22,7 +82,8 @@ export default function DailyCheckIn() {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [genStatus, setGenStatus] = useState("");
-  const [viewMode, setViewMode] = useState("content"); // content, answers, grading
+  const [viewMode, setViewMode] = useState("content");
+  const [xpAnimated, setXpAnimated] = useState(false);
 
   const { data: plans } = useQuery({
     queryKey: ['plans'],
@@ -45,10 +106,9 @@ export default function DailyCheckIn() {
     initialData: []
   });
 
-  // Find the current record to display
   const currentRecord = recordIdParam
     ? records.find(r => r.id === recordIdParam)
-    : records[0]; // Latest record
+    : records[0];
 
   useEffect(() => {
     if (currentRecord) {
@@ -58,76 +118,68 @@ export default function DailyCheckIn() {
     }
   }, [currentRecord?.id, currentRecord?.status]);
 
-  // Generate new day content
+  useEffect(() => {
+    if (viewMode === "grading") {
+      setTimeout(() => setXpAnimated(true), 300);
+    }
+  }, [viewMode]);
+
+  // Compute XP and streak
+  const completedRecords = records.filter(r => r.status === 'completed' && r.basic_accuracy != null);
+  const totalXP = completedRecords.reduce((sum, r) => sum + Math.round((r.basic_accuracy || 0) + (r.advanced_accuracy || 0) * 1.5), 0);
+  const level = Math.floor(totalXP / 500) + 1;
+  const xpInLevel = totalXP % 500;
+
+  // Compute streak
+  const sortedCompleted = [...completedRecords].sort((a, b) => b.day_number - a.day_number);
+  let streak = 0;
+  for (let i = 0; i < sortedCompleted.length; i++) {
+    if (sortedCompleted[i].day_number === (sortedCompleted[0]?.day_number - i)) streak++;
+    else break;
+  }
+
   const generateNewDay = async () => {
     if (!plan) return;
     setLoading(true);
-
     const nextDay = (plan.current_day || 0) + 1;
     const today = new Date().toISOString().split('T')[0];
-
-    // Check if in conflict avoidance period
     const isConflict = plan.conflict_avoidance_start && plan.conflict_avoidance_end &&
       today >= plan.conflict_avoidance_start && today <= plan.conflict_avoidance_end;
-
-    // Check schedule fit rule: if yesterday's basic accuracy < 60%, consolidate
     const yesterday = records.find(r => r.day_number === plan.current_day && r.status === 'completed');
     const needsConsolidation = yesterday && yesterday.basic_accuracy < 60;
 
-    let scenarioType = isConflict ? "conflict_avoidance" : "daily_checkin";
-
     if (isConflict) {
-      setGenStatus("🛡️ Generating conflict avoidance lightweight content...");
-      const conflictPrompt = buildConflictAvoidancePrompt(plan, nextDay, errors);
+      setGenStatus("🛡️ Generating conflict avoidance content...");
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: conflictPrompt,
+        prompt: buildConflictAvoidancePrompt(plan, nextDay, errors),
         model: "claude_sonnet_4_6"
       });
-
       await base44.entities.CheckInRecord.create({
-        plan_id: plan.id,
-        day_number: nextDay,
-        date: today,
-        scenario_type: "conflict_avoidance",
-        content: result,
-        status: "pending_answers"
+        plan_id: plan.id, day_number: nextDay, date: today,
+        scenario_type: "conflict_avoidance", content: result, status: "pending_answers"
       });
     } else {
-      // 3-model pipeline for daily content
       let dayContext = `Day ${nextDay} of the plan.`;
-      if (needsConsolidation) {
-        dayContext += `\n⚠️ SCHEDULE FIT RULE: Previous day basic accuracy was ${yesterday.basic_accuracy}% (<60%). SUSPEND new content. Do SPECIALIZED CONSOLIDATION of weak knowledge points only.`;
-      }
+      if (needsConsolidation) dayContext += `\n⚠️ SCHEDULE FIT RULE: Previous day basic accuracy was ${yesterday.basic_accuracy}% (<60%). SUSPEND new content. Do SPECIALIZED CONSOLIDATION.`;
       if (plan.full_plan_content) {
         const planSection = extractDayFromPlan(plan.full_plan_content, nextDay);
         if (planSection) dayContext += `\n\nFrom the master plan:\n${planSection}`;
       }
-
-      // Check pace acceleration: 2 consecutive days >= 90%
       const last2 = records.filter(r => r.status === 'completed').slice(0, 2);
       if (last2.length === 2 && last2.every(r => r.basic_accuracy >= 90)) {
-        dayContext += `\n📈 SCHEDULE FIT RULE: User has ≥90% accuracy for 2 consecutive days. You may increase speed by 20% and merge adjacent same-topic knowledge points.`;
+        dayContext += `\n📈 SCHEDULE FIT RULE: User ≥90% for 2 consecutive days. Increase speed by 20%.`;
       }
-
-      setGenStatus("📚 Generating today's lesson content (Claude)...");
-      const contentPrompt = buildContentGeneratorPrompt(plan, dayContext, nextDay, errors);
+      setGenStatus("📚 Generating today's mission content...");
       const contentResult = await base44.integrations.Core.InvokeLLM({
-        prompt: contentPrompt,
+        prompt: buildContentGeneratorPrompt(plan, dayContext, nextDay, errors),
         model: "claude_sonnet_4_6"
       });
-      const summaryResult = contentResult;
-
       await base44.entities.CheckInRecord.create({
-        plan_id: plan.id,
-        day_number: nextDay,
-        date: today,
-        scenario_type: "daily_checkin",
-        content: summaryResult,
-        status: "pending_answers"
+        plan_id: plan.id, day_number: nextDay, date: today,
+        scenario_type: "daily_checkin", content: contentResult, status: "pending_answers"
       });
     }
 
-    // Update plan's current day
     await base44.entities.LearningPlan.update(plan.id, {
       current_day: nextDay,
       current_phase: isConflict ? "conflict_avoidance" : plan.current_phase
@@ -139,32 +191,21 @@ export default function DailyCheckIn() {
     setGenStatus("");
   };
 
-  // Submit answers for grading
   const handleAnswerSubmit = async (answers) => {
     if (!currentRecord || !plan) return;
     setLoading(true);
-
-    // Save user answers
     await base44.entities.CheckInRecord.update(currentRecord.id, {
       user_answers_basic: answers.basic,
       user_answers_advanced: answers.advanced,
       status: "pending_grading"
     });
-
-    // Run grading pipeline
-    setGenStatus("📊 Grading your answers...");
-    const gradingPrompt = buildGradingPrompt(plan, currentRecord.content, answers.formatted, errors);
+    setGenStatus("⚔️ Grading your battle performance...");
     const gradingResult = await base44.integrations.Core.InvokeLLM({
-      prompt: gradingPrompt,
+      prompt: buildGradingPrompt(plan, currentRecord.content, answers.formatted, errors),
       model: "claude_sonnet_4_6"
     });
-    const summaryResult = gradingResult;
 
-    // Parse accuracy and errors from grading result
-    let basicAccuracy = 0;
-    let advancedAccuracy = 0;
-    let newErrors = [];
-
+    let basicAccuracy = 0, advancedAccuracy = 0, newErrors = [];
     const jsonMatch = gradingResult.match(/```json\s*([\s\S]*?)```/);
     if (jsonMatch) {
       try {
@@ -173,13 +214,11 @@ export default function DailyCheckIn() {
         advancedAccuracy = parsed.advanced_total > 0 ? Math.round((parsed.advanced_correct / parsed.advanced_total) * 100) : 0;
         newErrors = parsed.new_errors || [];
       } catch (e) {
-        // Fallback: try to parse from text
         const basicMatch = gradingResult.match(/Basic.*?(\d+).*?\/.*?10.*?(\d+)%/);
         if (basicMatch) basicAccuracy = parseInt(basicMatch[2]);
       }
     }
 
-    // Save errors to ErrorBook
     if (newErrors.length > 0) {
       await base44.entities.ErrorBookEntry.bulkCreate(
         newErrors.map(err => ({
@@ -199,9 +238,8 @@ export default function DailyCheckIn() {
       );
     }
 
-    // Update record with grading results
     await base44.entities.CheckInRecord.update(currentRecord.id, {
-      grading_result: summaryResult,
+      grading_result: gradingResult,
       basic_accuracy: basicAccuracy,
       advanced_accuracy: advancedAccuracy,
       status: "completed"
@@ -222,58 +260,79 @@ export default function DailyCheckIn() {
 
   if (!plan) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-500 mb-4">No active plan found</p>
-          <Button onClick={() => window.location.href = createPageUrl("Setup")} className="bg-slate-800 text-white">
-            Create a Plan
+          <p className="text-slate-400 mb-4">No active mission found</p>
+          <Button onClick={() => window.location.href = createPageUrl("Setup")} className="bg-amber-500 hover:bg-amber-400 text-white">
+            Start Your Journey
           </Button>
         </div>
       </div>
     );
   }
 
+  const earnedXP = currentRecord
+    ? Math.round((currentRecord.basic_accuracy || 0) + (currentRecord.advanced_accuracy || 0) * 1.5)
+    : 0;
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="max-w-4xl mx-auto px-4 py-6">
+
         {/* Top bar */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => window.location.href = createPageUrl("Dashboard")}
-            className="text-slate-500 gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" /> Dashboard
+        <div className="flex items-center justify-between mb-4">
+          <Button variant="ghost" onClick={() => window.location.href = createPageUrl("Dashboard")}
+            className="text-slate-500 gap-2 hover:text-slate-700">
+            <ArrowLeft className="w-4 h-4" /> Base
           </Button>
-          {currentRecord && (
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">Day {currentRecord.day_number}</Badge>
-              <Badge className={
-                currentRecord.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                currentRecord.status === 'pending_answers' ? 'bg-amber-100 text-amber-700' :
-                'bg-blue-100 text-blue-700'
-              }>
-                {currentRecord.status === 'completed' ? '✅ Complete' :
-                 currentRecord.status === 'pending_answers' ? '📝 Awaiting Answers' :
-                 '📊 Grading'}
-              </Badge>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 border border-orange-200 rounded-full">
+              <Flame className="w-3.5 h-3.5 text-orange-500" />
+              <span className="text-xs font-bold text-orange-600">{streak} streak</span>
             </div>
-          )}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-100 border border-violet-200 rounded-full">
+              <Zap className="w-3.5 h-3.5 text-violet-600" />
+              <span className="text-xs font-bold text-violet-700">Lv.{level}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Loading state with progress bar */}
+        {/* XP bar */}
+        <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                <Trophy className="w-4 h-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">{plan.program_name}</p>
+                <p className="text-xs text-slate-400">Level {level} Scholar · {totalXP} XP total</p>
+              </div>
+            </div>
+            {currentRecord && <MissionBadge status={currentRecord.status} day={currentRecord.day_number} />}
+          </div>
+          <XPBar current={xpInLevel} max={500} label={`Level ${level} Progress`} />
+        </div>
+
+        {/* Loading */}
         <GeneratingProgress
           active={loading}
           label={genStatus}
-          subLabel="Claude is generating your content. This may take up to a minute..."
+          subLabel="AI is preparing your mission content..."
           durationSeconds={50}
         />
 
+        {/* No record yet */}
         {!loading && !currentRecord && (
           <div className="text-center py-16">
-            <p className="text-slate-500 mb-4">Ready to start your first day of learning</p>
-            <Button onClick={generateNewDay} className="bg-slate-800 text-white gap-2">
-              Generate Day 1 Content <ChevronRight className="w-4 h-4" />
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Swords className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">Ready for Day 1?</h2>
+            <p className="text-slate-500 mb-6">Your first mission awaits. Begin your study journey!</p>
+            <Button onClick={generateNewDay}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white gap-2 h-12 px-8 shadow-md font-bold">
+              🗡️ Launch Mission <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -281,17 +340,19 @@ export default function DailyCheckIn() {
         {!loading && currentRecord && (
           <>
             {/* Tab navigation */}
-            <div className="flex gap-1 mb-6 bg-white rounded-lg p-1 shadow-sm">
+            <div className="flex gap-1.5 mb-5 bg-white rounded-xl p-1.5 shadow-sm border border-slate-100">
               {[
-                { key: "content", label: "📖 Lesson", show: true },
-                { key: "answers", label: "📝 Submit Answers", show: currentRecord.status === "pending_answers" },
-                { key: "grading", label: "📊 Grading Results", show: !!currentRecord.grading_result }
+                { key: "content", label: "📜 Briefing", show: true },
+                { key: "answers", label: "⚔️ Battle", show: currentRecord.status === "pending_answers" },
+                { key: "grading", label: "🏆 Results", show: !!currentRecord.grading_result }
               ].filter(t => t.show).map(tab => (
                 <button
                   key={tab.key}
                   onClick={() => setViewMode(tab.key)}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === tab.key ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-700'
+                  className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all ${
+                    viewMode === tab.key
+                      ? 'bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   {tab.label}
@@ -299,71 +360,131 @@ export default function DailyCheckIn() {
               ))}
             </div>
 
-            {/* Content view */}
+            {/* Mission Briefing */}
             {viewMode === "content" && currentRecord.content && (
-              <div className="bg-white rounded-xl shadow-sm p-6 md:p-10">
-                <ContentDisplay content={currentRecord.content} />
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      <Target className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold">Day {currentRecord.day_number} Mission Briefing</p>
+                      <p className="text-blue-200 text-xs">Study carefully — battle follows</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 md:p-10">
+                  <ContentDisplay content={currentRecord.content} />
+                </div>
+                {currentRecord.status === "pending_answers" && (
+                  <div className="px-6 pb-6">
+                    <Button
+                      onClick={() => setViewMode("answers")}
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold h-12 shadow-md"
+                    >
+                      ⚔️ Start Battle →
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Answer submission */}
+            {/* Battle / Answer submission */}
             {viewMode === "answers" && currentRecord.status === "pending_answers" && (
-              <AnswerSubmission
-                onSubmit={handleAnswerSubmit}
-                loading={loading}
-                scenarioType={currentRecord.scenario_type}
-              />
-            )}
-
-            {/* Grading results */}
-            {viewMode === "grading" && currentRecord.grading_result && (
-              <div>
-                {/* Accuracy summary bar */}
-                {currentRecord.basic_accuracy != null && (
-                  <div className="bg-white rounded-xl shadow-sm p-4 mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {currentRecord.basic_accuracy >= 60 ? (
-                        <CheckCircle className="w-6 h-6 text-emerald-500" />
-                      ) : (
-                        <AlertTriangle className="w-6 h-6 text-amber-500" />
-                      )}
-                      <div>
-                        <span className="text-sm text-slate-500">Basic: </span>
-                        <span className={`font-bold ${currentRecord.basic_accuracy >= 85 ? 'text-emerald-600' : currentRecord.basic_accuracy >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
-                          {currentRecord.basic_accuracy}%
-                        </span>
-                      </div>
-                      {currentRecord.advanced_accuracy != null && (
-                        <div>
-                          <span className="text-sm text-slate-500">Advanced: </span>
-                          <span className={`font-bold ${currentRecord.advanced_accuracy >= 75 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                            {currentRecord.advanced_accuracy}%
-                          </span>
-                        </div>
-                      )}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-rose-600 to-red-600 px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      <Swords className="w-5 h-5 text-white" />
                     </div>
-                    {currentRecord.basic_accuracy < 60 && (
-                      <Badge className="bg-red-100 text-red-700">
-                        ⚠️ Tomorrow: Consolidation Day
-                      </Badge>
-                    )}
+                    <div>
+                      <p className="text-white font-bold">Battle Mode — Day {currentRecord.day_number}</p>
+                      <p className="text-red-200 text-xs">Answer each question. Every point counts!</p>
+                    </div>
                   </div>
-                )}
-                <div className="bg-white rounded-xl shadow-sm p-6 md:p-10">
-                  <ContentDisplay content={currentRecord.grading_result} />
+                </div>
+                <div className="p-4">
+                  <AnswerSubmission
+                    onSubmit={handleAnswerSubmit}
+                    loading={loading}
+                    scenarioType={currentRecord.scenario_type}
+                  />
                 </div>
               </div>
             )}
 
-            {/* Next day button */}
+            {/* Results */}
+            {viewMode === "grading" && currentRecord.grading_result && (
+              <div className="space-y-4">
+                {/* XP earned card */}
+                <div className={`rounded-2xl border overflow-hidden shadow-md ${
+                  currentRecord.basic_accuracy >= 60
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 border-emerald-400'
+                    : 'bg-gradient-to-r from-rose-500 to-red-500 border-rose-400'
+                }`}>
+                  <div className="p-5 flex items-center justify-between">
+                    <div>
+                      <p className="text-white/80 text-sm font-medium">
+                        {currentRecord.basic_accuracy >= 85 ? '🏆 OUTSTANDING VICTORY' :
+                         currentRecord.basic_accuracy >= 60 ? '✅ MISSION COMPLETE' : '❌ MISSION FAILED'}
+                      </p>
+                      <p className="text-white text-3xl font-black mt-1">+{earnedXP} XP</p>
+                      <p className="text-white/70 text-xs mt-1">Day {currentRecord.day_number} complete</p>
+                    </div>
+                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+                      <Trophy className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                  {currentRecord.basic_accuracy != null && (
+                    <div className="bg-black/10 px-5 pb-5 space-y-2.5">
+                      <AccuracyBar
+                        value={currentRecord.basic_accuracy}
+                        label="Basic Questions"
+                        color={currentRecord.basic_accuracy >= 85 ? 'text-white' : currentRecord.basic_accuracy >= 60 ? 'text-yellow-200' : 'text-red-200'}
+                      />
+                      {currentRecord.advanced_accuracy != null && (
+                        <AccuracyBar
+                          value={currentRecord.advanced_accuracy}
+                          label="Advanced Questions"
+                          color={currentRecord.advanced_accuracy >= 75 ? 'text-white' : 'text-yellow-200'}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {currentRecord.basic_accuracy < 60 && (
+                  <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <Shield className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                    <p className="text-amber-700 text-sm font-medium">
+                      ⚠️ Tomorrow will be a <strong>Consolidation Day</strong> — no new content, focus on weak points.
+                    </p>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="bg-slate-50 border-b border-slate-100 px-6 py-4">
+                    <p className="font-bold text-slate-700 flex items-center gap-2">
+                      <Star className="w-4 h-4 text-amber-500" /> Detailed Battle Report
+                    </p>
+                  </div>
+                  <div className="p-6 md:p-10">
+                    <ContentDisplay content={currentRecord.grading_result} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Next mission button */}
             {currentRecord.status === "completed" && (
-              <div className="mt-6 text-center">
+              <div className="mt-6">
                 <Button
                   onClick={generateNewDay}
                   disabled={loading}
-                  className="bg-slate-800 hover:bg-slate-700 text-white gap-2 h-12 px-8"
+                  className="w-full bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white gap-2 h-14 text-base font-bold shadow-md rounded-xl"
                 >
-                  Generate Day {(plan.current_day || 0) + 1} Content <ChevronRight className="w-4 h-4" />
+                  🗡️ Launch Day {(plan.current_day || 0) + 1} Mission <ChevronRight className="w-5 h-5" />
                 </Button>
               </div>
             )}
