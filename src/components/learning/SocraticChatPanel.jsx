@@ -87,11 +87,11 @@ export default function SocraticChatPanel({ activePlan }) {
     });
 
     setConversation(updated);
-    setMessages(updated.messages.filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
+    setMessages((updated?.messages || []).filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
     setInitializing(false);
 
     const unsubscribe = base44.agents.subscribeToConversation(updated.id, (data) => {
-      setMessages(data.messages.filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
+      setMessages((data?.messages || []).filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
     });
     return () => unsubscribe();
   };
