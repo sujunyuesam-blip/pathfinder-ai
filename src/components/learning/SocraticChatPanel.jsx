@@ -111,7 +111,9 @@ export default function SocraticChatPanel({ activePlan }) {
       // Conversation no longer exists — reinitialize
       setConversation(null);
       setMessages([]);
+      setSending(false);
       await startConversation();
+      return;
     }
     setSending(false);
     setTimeout(() => inputRef.current?.focus(), 100);
