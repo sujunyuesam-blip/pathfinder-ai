@@ -97,6 +97,11 @@ export default function SocraticChat() {
   }, [messages]);
 
   const initConversation = async () => {
+    // Cleanup any existing subscription
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
     setInitializing(true);
     const conv = await base44.agents.createConversation({
       agent_name: "learning_guide",
@@ -112,11 +117,16 @@ export default function SocraticChat() {
     setMessages((updated?.messages || []).filter(m => !(m.role === "user" && m.content?.startsWith("Context:"))));
     setInitializing(false);
 
-    const unsubscribe = base44.agents.subscribeToConversation(updated.id, (data) => {
+    unsubscribeRef.current = base44.agents.subscribeToConversation(updated.id, (data) => {
       setMessages((data?.messages || []).filter(m => !(m.role === "user" && m.content?.startsWith("Context:"))));
     });
-    return () => unsubscribe();
   };
+
+  useEffect(() => {
+    return () => {
+      if (unsubscribeRef.current) unsubscribeRef.current();
+    };
+  }, []);
 
   const sendMessage = async () => {
     if (!input.trim() || sending || !conversation) return;
