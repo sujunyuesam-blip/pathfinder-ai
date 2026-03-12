@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { name: "Socratic Guide", icon: Sparkles, page: "SocraticChat" },
   { name: "Error Book", icon: BookMarked, page: "ErrorBook" },
   { name: "Full Plan", icon: Map, page: "PlanView" },
+  { name: "Admin Panel", icon: ShieldCheck, page: "AdminPanel" },
 ];
 
 function LayoutInner({ children, currentPageName }) {
