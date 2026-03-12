@@ -137,8 +137,11 @@ export default function SocraticChat() {
       const updated = await base44.agents.addMessage(conversation, { role: "user", content: text });
       setConversation(updated);
     } catch (e) {
-      // Conversation no longer exists — reinitialize
+      // Conversation no longer exists — reinitialize then retry
       await initConversation();
+      const conv = await base44.agents.createConversation({ agent_name: "learning_guide" });
+      const updated = await base44.agents.addMessage(conv, { role: "user", content: text });
+      setConversation(updated);
     }
     setSending(false);
     setTimeout(() => inputRef.current?.focus(), 100);
