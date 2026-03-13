@@ -58,6 +58,11 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
+      <Route path="/TeacherDashboard" element={
+        <LayoutWrapper currentPageName="TeacherDashboard">
+          <TeacherDashboard />
+        </LayoutWrapper>
+      } />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
