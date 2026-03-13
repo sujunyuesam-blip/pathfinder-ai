@@ -1,48 +1,73 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Sparkles, ShieldCheck } from "lucide-react";
+import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Sparkles, ShieldCheck, Users, GraduationCap } from "lucide-react";
 import AuthGuard from "./components/AuthGuard";
+import { base44 } from "@/api/base44Client";
 
-const NAV_ITEMS = [
+const STUDENT_NAV = [
   { name: "Dashboard", icon: LayoutDashboard, page: "Dashboard" },
   { name: "Daily Check-in", icon: Calendar, page: "DailyCheckIn" },
   { name: "Socratic Guide", icon: Sparkles, page: "SocraticChat" },
   { name: "Error Book", icon: BookMarked, page: "ErrorBook" },
   { name: "Full Plan", icon: Map, page: "PlanView" },
+];
+
+const TEACHER_NAV = [
+  { name: "Student Progress", icon: Users, page: "TeacherDashboard" },
+];
+
+const ADMIN_NAV = [
   { name: "Admin Panel", icon: ShieldCheck, page: "AdminPanel" },
 ];
 
 function LayoutInner({ children, currentPageName }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [user, setUser] = React.useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const appRole = user?.app_role || "student";
+  const sysRole = user?.role;
 
   if (currentPageName === "Setup" || currentPageName === "SocraticChat") {
     return <>{children}</>;
   }
+
+  const navItems = appRole === "teacher"
+    ? [...TEACHER_NAV, ...(sysRole === "admin" ? ADMIN_NAV : [])]
+    : [...STUDENT_NAV, ...(sysRole === "admin" ? ADMIN_NAV : [])];
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-60 bg-white border-r border-slate-100 flex-col fixed h-full z-20">
         <div className="p-6 border-b border-slate-100">
-          <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2.5">
+          <Link to={createPageUrl(appRole === "teacher" ? "TeacherDashboard" : "Dashboard")} className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
               <BookOpen className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-slate-800 text-lg">LearnAgent</span>
           </Link>
+          {user && (
+            <div className="mt-3 flex items-center gap-1.5">
+              <div className={`px-2 py-0.5 rounded-full text-xs font-semibold ${appRole === 'teacher' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'}`}>
+                {appRole === "teacher" ? "👨‍🏫 Teacher" : "🎓 Student"}
+              </div>
+            </div>
+          )}
         </div>
         <nav className="flex-1 p-4 space-y-1">
-          {NAV_ITEMS.map(item => {
+          {navItems.map(item => {
             const isActive = currentPageName === item.page;
             return (
               <Link
                 key={item.page}
                 to={createPageUrl(item.page)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-slate-800 text-white'
-                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                 }`}
               >
                 <item.icon className="w-4 h-4" />
@@ -51,19 +76,18 @@ function LayoutInner({ children, currentPageName }) {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-slate-100">
-          <Link
-            to={createPageUrl("Setup")}
-            className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            + New Learning Plan
-          </Link>
-        </div>
+        {appRole === "student" && (
+          <div className="p-4 border-t border-slate-100">
+            <Link to={createPageUrl("Setup")} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">
+              + New Learning Plan
+            </Link>
+          </div>
+        )}
       </aside>
 
       {/* Mobile header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-100 z-30 px-4 py-3 flex items-center justify-between">
-        <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2">
+        <Link to={createPageUrl(appRole === "teacher" ? "TeacherDashboard" : "Dashboard")} className="flex items-center gap-2">
           <div className="w-7 h-7 bg-slate-800 rounded-lg flex items-center justify-center">
             <BookOpen className="w-3.5 h-3.5 text-white" />
           </div>
@@ -79,7 +103,7 @@ function LayoutInner({ children, currentPageName }) {
         <div className="md:hidden fixed inset-0 z-20 bg-black/20" onClick={() => setMobileOpen(false)}>
           <div className="bg-white w-64 h-full p-4 pt-16" onClick={e => e.stopPropagation()}>
             <nav className="space-y-1">
-              {NAV_ITEMS.map(item => {
+              {navItems.map(item => {
                 const isActive = currentPageName === item.page;
                 return (
                   <Link
