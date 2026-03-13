@@ -71,6 +71,9 @@ export default function Dashboard() {
     <>
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Daily Reminder */}
+        <DailyReminder />
+
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -144,6 +147,40 @@ export default function Dashboard() {
                 <p className="text-xs text-slate-400 mt-0.5">View complete learning roadmap</p>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-300" />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Forum + Knowledge Graph row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card
+            className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-r from-slate-900 to-slate-800 text-white"
+            onClick={() => window.location.href = createPageUrl("SocraticForum")}
+          >
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="w-12 h-12 bg-violet-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <MessageSquare className="w-6 h-6 text-violet-300" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-white">Socratic Forum</p>
+                <p className="text-xs text-slate-400 mt-0.5">AI-examined community questions</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-500" />
+            </CardContent>
+          </Card>
+          <Card
+            className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-r from-slate-900 to-slate-800 text-white"
+            onClick={() => window.location.href = createPageUrl("KnowledgeGraph")}
+          >
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Network className="w-6 h-6 text-cyan-300" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-white">Knowledge Graph</p>
+                <p className="text-xs text-slate-400 mt-0.5">Visual mastery map of all concepts</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-500" />
             </CardContent>
           </Card>
         </div>

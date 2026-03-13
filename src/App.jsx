@@ -60,6 +60,16 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
+      <Route path="/SocraticForum" element={
+        <LayoutWrapper currentPageName="SocraticForum">
+          <SocraticForum />
+        </LayoutWrapper>
+      } />
+      <Route path="/KnowledgeGraph" element={
+        <LayoutWrapper currentPageName="KnowledgeGraph">
+          <KnowledgeGraph />
+        </LayoutWrapper>
+      } />
       <Route path="/TeacherDashboard" element={
         <LayoutWrapper currentPageName="TeacherDashboard">
           <TeacherDashboard />
