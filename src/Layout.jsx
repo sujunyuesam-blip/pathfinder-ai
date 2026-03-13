@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Sparkles, ShieldCheck, Users, GraduationCap } from "lucide-react";
+import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Sparkles, ShieldCheck, Users, GraduationCap, Network, MessageSquare } from "lucide-react";
 import AuthGuard from "./components/AuthGuard";
 import { base44 } from "@/api/base44Client";
 
@@ -11,6 +11,8 @@ const STUDENT_NAV = [
   { name: "Socratic Guide", icon: Sparkles, page: "SocraticChat" },
   { name: "Error Book", icon: BookMarked, page: "ErrorBook" },
   { name: "Full Plan", icon: Map, page: "PlanView" },
+  { name: "Knowledge Graph", icon: Network, page: "KnowledgeGraph" },
+  { name: "Forum", icon: MessageSquare, page: "SocraticForum" },
 ];
 
 const TEACHER_NAV = [
