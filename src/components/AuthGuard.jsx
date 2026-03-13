@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { BookOpen, Loader2, Phone, Mail } from "lucide-react";
+import { BookOpen, Loader2, GraduationCap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 export default function AuthGuard({ children }) {
-  const [status, setStatus] = useState("checking"); // checking | authed | guest | profile
+  const [status, setStatus] = useState("checking"); // checking | authed | guest | role
   const [user, setUser] = useState(null);
-  const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -15,19 +13,17 @@ export default function AuthGuard({ children }) {
       if (!auth) { setStatus("guest"); return; }
       const me = await base44.auth.me();
       setUser(me);
-      // If no phone number saved yet, prompt for it
-      if (!me.phone_number) {
-        setStatus("profile");
+      if (!me.app_role) {
+        setStatus("role");
       } else {
         setStatus("authed");
       }
     });
   }, []);
 
-  const handleSaveProfile = async () => {
-    if (!phone.trim()) return;
+  const handleSelectRole = async (role) => {
     setSaving(true);
-    await base44.auth.updateMe({ phone_number: phone.trim() });
+    await base44.auth.updateMe({ app_role: role });
     setStatus("authed");
     setSaving(false);
   };
@@ -42,16 +38,27 @@ export default function AuthGuard({ children }) {
 
   if (status === "guest") {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-10 max-w-sm w-full text-center">
-          <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-10 max-w-sm w-full text-center">
+          <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md">
             <BookOpen className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-2">LearnAgent</h1>
-          <p className="text-slate-500 text-sm mb-8">Sign in to access your learning plans</p>
+          <h1 className="text-2xl font-bold text-slate-800 mb-1">LearnAgent</h1>
+          <p className="text-slate-500 text-sm mb-3">AI-powered Socratic learning platform</p>
+          <div className="flex flex-col gap-2 mb-6 text-left text-xs bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <p className="font-semibold text-slate-600 mb-1">Two ways to use this app:</p>
+            <div className="flex items-start gap-2">
+              <GraduationCap className="w-4 h-4 text-violet-500 mt-0.5 flex-shrink-0" />
+              <p className="text-slate-500"><strong className="text-slate-700">Student</strong> — follow daily missions, earn XP, chat with the Socratic AI guide</p>
+            </div>
+            <div className="flex items-start gap-2 mt-1">
+              <Users className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+              <p className="text-slate-500"><strong className="text-slate-700">Teacher</strong> — monitor all your students' progress, accuracy, and streaks</p>
+            </div>
+          </div>
           <Button
             onClick={() => base44.auth.redirectToLogin(window.location.href)}
-            className="w-full bg-slate-800 hover:bg-slate-700 text-white h-11"
+            className="w-full bg-slate-800 hover:bg-slate-700 text-white h-11 font-semibold"
           >
             Sign In to Continue
           </Button>
@@ -60,52 +67,57 @@ export default function AuthGuard({ children }) {
     );
   }
 
-  if (status === "profile") {
+  if (status === "role") {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-10 max-w-sm w-full">
-          <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <BookOpen className="w-7 h-7 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full">
+          <div className="text-center mb-8">
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-md">
+              <BookOpen className="w-6 h-6 text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800">Welcome, {user?.full_name || user?.email}!</h2>
+            <p className="text-slate-500 text-sm mt-1">How will you use LearnAgent?</p>
           </div>
-          <h1 className="text-xl font-bold text-slate-800 mb-1 text-center">Complete Your Profile</h1>
-          <p className="text-slate-500 text-sm mb-6 text-center">Add your contact info to get started</p>
 
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs font-medium text-slate-500 block mb-1.5">Email</label>
-              <div className="flex items-center gap-2 px-3 py-2.5 border border-slate-200 rounded-lg bg-slate-50">
-                <Mail className="w-4 h-4 text-slate-400" />
-                <span className="text-sm text-slate-600">{user?.email}</span>
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-500 block mb-1.5">Phone Number</label>
-              <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 focus-within:ring-2 focus-within:ring-slate-800 focus-within:border-transparent">
-                <Phone className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <Input
-                  type="tel"
-                  placeholder="+1 234 567 8900"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  className="border-0 shadow-none focus-visible:ring-0 px-0 h-10"
-                  onKeyDown={e => e.key === 'Enter' && handleSaveProfile()}
-                />
-              </div>
-            </div>
-            <Button
-              onClick={handleSaveProfile}
-              disabled={!phone.trim() || saving}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-white h-11 mt-2"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save & Continue"}
-            </Button>
+          <div className="space-y-3">
             <button
-              onClick={() => setStatus("authed")}
-              className="w-full text-xs text-slate-400 hover:text-slate-600 text-center"
+              onClick={() => handleSelectRole("student")}
+              disabled={saving}
+              className="w-full text-left p-4 border-2 border-slate-100 hover:border-violet-300 hover:bg-violet-50 rounded-xl transition-all group"
             >
-              Skip for now
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-violet-100 group-hover:bg-violet-200 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors">
+                  <GraduationCap className="w-5 h-5 text-violet-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-800">I'm a Student</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Daily missions, XP, Socratic AI guide</p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => handleSelectRole("teacher")}
+              disabled={saving}
+              className="w-full text-left p-4 border-2 border-slate-100 hover:border-blue-300 hover:bg-blue-50 rounded-xl transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 group-hover:bg-blue-200 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-800">I'm a Teacher</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Monitor student progress and learning stats</p>
+                </div>
+              </div>
             </button>
           </div>
+
+          {saving && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-slate-400 text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" /> Setting up your account...
+            </div>
+          )}
         </div>
       </div>
     );
