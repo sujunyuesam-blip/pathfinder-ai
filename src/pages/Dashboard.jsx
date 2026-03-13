@@ -5,9 +5,10 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, BookOpen, Calendar, Target, ArrowRight, Plus, BarChart3, BookMarked, Clock, Sparkles } from "lucide-react";
+import { Loader2, BookOpen, Calendar, Target, ArrowRight, Plus, BarChart3, BookMarked, Clock, Sparkles, Network, MessageSquare } from "lucide-react";
 import ProgressStats from "../components/learning/ProgressStats";
 import SocraticChatPanel from "../components/learning/SocraticChatPanel";
+import DailyReminder from "../components/DailyReminder";
 
 export default function Dashboard() {
   const { data: plans, isLoading: plansLoading } = useQuery({
