@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Sparkles, ShieldCheck, Users, GraduationCap, Network, MessageSquare, RefreshCw } from "lucide-react";
+import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Sparkles, Users, GraduationCap, Network, MessageSquare, RefreshCw } from "lucide-react";
 import AuthGuard from "./components/AuthGuard";
 import { base44 } from "@/api/base44Client";
 
@@ -19,9 +19,7 @@ const TEACHER_NAV = [
   { name: "Student Progress", icon: Users, page: "TeacherDashboard" },
 ];
 
-const ADMIN_NAV = [
-  { name: "Admin Panel", icon: ShieldCheck, page: "AdminPanel" },
-];
+const ADMIN_NAV = [];
 
 function LayoutInner({ children, currentPageName }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
