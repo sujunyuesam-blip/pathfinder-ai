@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Sparkles, ShieldCheck, Users, GraduationCap, Network, MessageSquare } from "lucide-react";
+import { BookOpen, LayoutDashboard, Calendar, BookMarked, Map, Menu, X, Sparkles, ShieldCheck, Users, GraduationCap, Network, MessageSquare, RefreshCw } from "lucide-react";
 import AuthGuard from "./components/AuthGuard";
 import { base44 } from "@/api/base44Client";
 
@@ -31,6 +31,14 @@ function LayoutInner({ children, currentPageName }) {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  const switchRole = async () => {
+    const newRole = (user?.app_role || "student") === "student" ? "teacher" : "student";
+    await base44.auth.updateMe({ app_role: newRole });
+    const updated = await base44.auth.me();
+    setUser(updated);
+    window.location.href = newRole === "teacher" ? createPageUrl("TeacherDashboard") : createPageUrl("Dashboard");
+  };
+
   const appRole = user?.app_role || "student";
   const sysRole = user?.role;
 
@@ -58,6 +66,13 @@ function LayoutInner({ children, currentPageName }) {
               <div className={`px-2 py-0.5 rounded-full text-xs font-semibold ${appRole === 'teacher' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'}`}>
                 {appRole === "teacher" ? "👨‍🏫 Teacher" : "🎓 Student"}
               </div>
+              <button
+                onClick={switchRole}
+                title={`Switch to ${appRole === "teacher" ? "Student" : "Teacher"}`}
+                className="ml-auto text-slate-400 hover:text-slate-700 transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
         </div>
