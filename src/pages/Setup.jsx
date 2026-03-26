@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import SetupForm from "../components/learning/SetupForm";
 import ContentDisplay from "../components/learning/ContentDisplay";
 import GeneratingProgress from "../components/learning/GeneratingProgress";
-import { buildLogicPlannerPrompt, buildContentGeneratorPrompt, buildPlanAuditorPrompt, buildContentVerifierPrompt } from "../components/learning/PromptEngine";
+import { buildLogicPlannerPrompt, buildContentGeneratorPrompt } from "../components/learning/PromptEngine";
 import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -20,54 +20,24 @@ export default function Setup() {
     setStage("generating");
     setPlanData(formData);
 
-    // Step 1: Logic Planner — Gemini Pro (structured long-form planning)
-    setGenStatus("🧠 Step 1/4: Logic Planner building schedule...");
+    // Step 1: Logic Planner — builds the full schedule
+    setGenStatus("🧠 Step 1/2: Logic Planner building schedule...");
     const logicPrompt = buildLogicPlannerPrompt(formData);
     const logicResult = await base44.integrations.Core.InvokeLLM({
       prompt: logicPrompt,
       model: "gemini_3_pro"
     });
 
-    // Step 2: Plan Auditor — Claude Sonnet (cross-validates red-line rules, fixes hallucinations)
-    setGenStatus("🔍 Step 2/4: Auditor validating plan against all rules...");
-    const auditPrompt = buildPlanAuditorPrompt(formData, logicResult);
-    const auditResult = await base44.integrations.Core.InvokeLLM({
-      prompt: auditPrompt,
-      model: "claude_sonnet_4_6"
-    });
+    const correctedPlan = logicResult;
+    const day1Themes = extractDay1FromPlan(logicResult);
 
-    // Extract Day 1 themes from the auditor's output (more reliable than raw logic output)
-    const day1ThemesMatch = auditResult.match(/## Day 1 Knowledge Point Themes \(Extracted\)([\s\S]*?)(?=## Risk Flags|$)/i);
-    const day1Themes = day1ThemesMatch ? day1ThemesMatch[1].trim() : extractDay1FromPlan(auditResult);
-    const riskFlagsMatch = auditResult.match(/## Risk Flags for Content Generator([\s\S]*?)$/i);
-    const riskFlags = riskFlagsMatch ? riskFlagsMatch[1].trim() : '';
-    const correctedPlanMatch = auditResult.match(/## Corrected Full Plan([\s\S]*?)(?=## Day 1 Knowledge|$)/i);
-    const correctedPlan = correctedPlanMatch ? correctedPlanMatch[1].trim() : logicResult;
-
-    // Step 3: Content Generator — Claude Sonnet (rich educational content, informed by audit)
-    setGenStatus("📚 Step 3/4: Generating Day 1 lesson content...");
-    const contentPrompt = buildContentGeneratorPrompt(
-      formData,
-      day1Themes + (riskFlags ? `\n\n=== RISK FLAGS FROM AUDITOR ===\n${riskFlags}` : ''),
-      1,
-      []
-    );
-    const contentResult = await base44.integrations.Core.InvokeLLM({
+    // Step 2: Content Generator — generates Day 1 lesson content
+    setGenStatus("📚 Step 2/2: Generating Day 1 lesson content...");
+    const contentPrompt = buildContentGeneratorPrompt(formData, day1Themes, 1, []);
+    const summaryResult = await base44.integrations.Core.InvokeLLM({
       prompt: contentPrompt,
       model: "claude_sonnet_4_6"
     });
-
-    // Step 4: Content Verifier — Gemini Flash (fast verification pass, catches Q-content misalignment)
-    setGenStatus("✅ Step 4/4: Verifier checking question-content alignment...");
-    const verifyPrompt = buildContentVerifierPrompt(formData, contentResult);
-    const verifyResult = await base44.integrations.Core.InvokeLLM({
-      prompt: verifyPrompt,
-      model: "gemini_3_flash"
-    });
-
-    // Extract verified content (or fall back to original if verifier passed cleanly)
-    const verifiedContentMatch = verifyResult.match(/## Verified & Corrected Content([\s\S]*)$/i);
-    const summaryResult = verifiedContentMatch ? verifiedContentMatch[1].trim() : contentResult;
 
     setGeneratedPlan(summaryResult);
 
@@ -126,8 +96,8 @@ export default function Setup() {
           <GeneratingProgress
             active={true}
             label={genStatus}
-            subLabel="4-step pipeline: Logic Planner → Plan Auditor → Content Generator → Content Verifier"
-            durationSeconds={120}
+            subLabel="Generating your personalized learning plan..."
+            durationSeconds={90}
           />
         )}
 
