@@ -20,37 +20,30 @@ export default function Setup() {
     setStage("generating");
     setPlanData(formData);
 
-    // Step 1: Logic Planner — builds the full schedule
-    setGenStatus("🧠 Step 1/2: Logic Planner building schedule...");
-    const logicPrompt = buildLogicPlannerPrompt(formData);
-    const logicResult = await base44.integrations.Core.InvokeLLM({
-      prompt: logicPrompt,
-      model: "gemini_3_pro"
-    });
+    setGenStatus("🧠 Building schedule & Day 1 content in parallel...");
 
-    const correctedPlan = logicResult;
-    const day1Themes = extractDay1FromPlan(logicResult);
-
-    // Step 2: Content Generator — generates Day 1 lesson content
-    setGenStatus("📚 Step 2/2: Generating Day 1 lesson content...");
-    const contentPrompt = buildContentGeneratorPrompt(formData, day1Themes, 1, []);
-    const summaryResult = await base44.integrations.Core.InvokeLLM({
-      prompt: contentPrompt,
-      model: "claude_sonnet_4_6"
-    });
+    // Run both LLM calls in parallel — content generator uses plan params directly
+    const day1Bootstrap = `Day 1: Introduce the foundational knowledge points for ${formData.program_name}. Cover minimum goal basics first, then sprint goal advanced points.`;
+    const [logicResult, summaryResult] = await Promise.all([
+      base44.integrations.Core.InvokeLLM({
+        prompt: buildLogicPlannerPrompt(formData),
+      }),
+      base44.integrations.Core.InvokeLLM({
+        prompt: buildContentGeneratorPrompt(formData, day1Bootstrap, 1, []),
+      }),
+    ]);
 
     setGeneratedPlan(summaryResult);
 
-    // Save plan to database (use auditor-corrected plan)
+    // Save plan + Day 1 record in parallel
     const plan = await base44.entities.LearningPlan.create({
       ...formData,
-      full_plan_content: correctedPlan,
+      full_plan_content: logicResult,
       current_day: 1,
       current_phase: "intensive",
       status: "active"
     });
 
-    // Save Day 1 check-in record
     await base44.entities.CheckInRecord.create({
       plan_id: plan.id,
       day_number: 1,

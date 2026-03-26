@@ -148,11 +148,13 @@ export default function DailyCheckIn() {
     const yesterday = records.find(r => r.day_number === plan.current_day && r.status === 'completed');
     const needsConsolidation = yesterday && yesterday.basic_accuracy < 60;
 
+    // Only pass last 5 errors to reduce token load
+    const recentErrors = errors.slice(0, 5);
+
     if (isConflict) {
       setGenStatus("🛡️ Generating conflict avoidance content...");
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: buildConflictAvoidancePrompt(plan, nextDay, errors),
-        model: "claude_sonnet_4_6"
+        prompt: buildConflictAvoidancePrompt(plan, nextDay, recentErrors),
       });
       await base44.entities.CheckInRecord.create({
         plan_id: plan.id, day_number: nextDay, date: today,
@@ -171,8 +173,7 @@ export default function DailyCheckIn() {
       }
       setGenStatus("📚 Generating today's mission content...");
       const contentResult = await base44.integrations.Core.InvokeLLM({
-        prompt: buildContentGeneratorPrompt(plan, dayContext, nextDay, errors),
-        model: "claude_sonnet_4_6"
+        prompt: buildContentGeneratorPrompt(plan, dayContext, nextDay, recentErrors),
       });
       await base44.entities.CheckInRecord.create({
         plan_id: plan.id, day_number: nextDay, date: today,
@@ -201,8 +202,7 @@ export default function DailyCheckIn() {
     });
     setGenStatus("⚔️ Grading your battle performance...");
     const gradingResult = await base44.integrations.Core.InvokeLLM({
-      prompt: buildGradingPrompt(plan, currentRecord.content, answers.formatted, errors),
-      model: "claude_sonnet_4_6"
+      prompt: buildGradingPrompt(plan, currentRecord.content, answers.formatted, errors.slice(0, 10)),
     });
 
     let basicAccuracy = 0, advancedAccuracy = 0, newErrors = [];
