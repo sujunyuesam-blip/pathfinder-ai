@@ -112,8 +112,8 @@ export default function DailyCheckIn() {
 
   useEffect(() => {
     if (currentRecord) {
-      if (currentRecord.grading_result) setViewMode("grading");
-      else if (currentRecord.status === "pending_answers") setViewMode("answers");
+      if (currentRecord.status === "pending_answers") setViewMode("answers");
+      else if (currentRecord.grading_result) setViewMode("grading");
       else setViewMode("content");
     }
   }, [currentRecord?.id, currentRecord?.status]);
@@ -142,8 +142,9 @@ export default function DailyCheckIn() {
     if (!plan) return;
     setLoading(true);
     setViewMode("content");
-    // Use the latest plan.current_day as the source of truth for what's been generated
-    const nextDay = (plan.current_day || 0) + 1;
+    // Use the latest completed record's day as the source of truth
+    const latestDay = records[0]?.day_number || 0;
+    const nextDay = latestDay + 1;
     const today = new Date().toISOString().split('T')[0];
     const isConflict = plan.conflict_avoidance_start && plan.conflict_avoidance_end &&
       today >= plan.conflict_avoidance_start && today <= plan.conflict_avoidance_end;
@@ -478,15 +479,15 @@ export default function DailyCheckIn() {
               </div>
             )}
 
-            {/* Next mission button — shown when current day is done */}
-            {currentRecord.status === "completed" && plan.current_day === currentRecord.day_number && (
+            {/* Next mission button — shown when the latest record is completed (no pending/active day exists) */}
+            {!recordIdParam && currentRecord.status === "completed" && (
               <div className="mt-6">
                 <Button
                   onClick={generateNewDay}
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white gap-2 h-14 text-base font-bold shadow-md rounded-xl"
                 >
-                  🗡️ Launch Day {(plan.current_day || 0) + 1} Mission <ChevronRight className="w-5 h-5" />
+                  🗡️ Launch Day {currentRecord.day_number + 1} Mission <ChevronRight className="w-5 h-5" />
                 </Button>
               </div>
             )}
