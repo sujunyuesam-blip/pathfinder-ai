@@ -112,11 +112,10 @@ export default function DailyCheckIn() {
 
   useEffect(() => {
     if (currentRecord) {
-      if (currentRecord.status === "pending_answers") setViewMode("answers");
-      else if (currentRecord.grading_result) setViewMode("grading");
-      else setViewMode("content");
+      if (currentRecord.status === "completed" && currentRecord.grading_result) setViewMode("grading");
+      else setViewMode("content"); // Always start at briefing — battle button is inside it
     }
-  }, [currentRecord?.id, currentRecord?.status]);
+  }, [currentRecord?.id]);
 
   useEffect(() => {
     if (viewMode === "grading") {
@@ -345,8 +344,8 @@ export default function DailyCheckIn() {
             {/* Tab navigation */}
             <div className="flex gap-1.5 mb-5 bg-white rounded-xl p-1.5 shadow-sm border border-slate-100">
               {[
-                { key: "content", label: "📜 Briefing", show: true },
-                { key: "answers", label: "⚔️ Battle", show: currentRecord.status === "pending_answers" },
+                { key: "content", label: "📖 Study Content", show: true },
+                { key: "answers", label: "✏️ Submit Answers", show: currentRecord.status === "pending_answers" },
                 { key: "grading", label: "🏆 Results", show: !!currentRecord.grading_result }
               ].filter(t => t.show).map(tab => (
                 <button
@@ -381,12 +380,15 @@ export default function DailyCheckIn() {
                   <ContentDisplay content={currentRecord.content} />
                 </div>
                 {currentRecord.status === "pending_answers" && (
-                  <div className="px-6 pb-6">
+                  <div className="px-6 pb-8">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-sm text-amber-700">
+                      ✅ Done studying? Submit your answers below to complete Day {currentRecord.day_number}.
+                    </div>
                     <Button
                       onClick={() => setViewMode("answers")}
-                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold h-12 shadow-md"
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold h-14 text-base shadow-md"
                     >
-                      ⚔️ Start Battle →
+                      ⚔️ Submit Answers for Day {currentRecord.day_number} →
                     </Button>
                   </div>
                 )}
