@@ -141,6 +141,8 @@ export default function DailyCheckIn() {
   const generateNewDay = async () => {
     if (!plan) return;
     setLoading(true);
+    setViewMode("content");
+    // Use the latest plan.current_day as the source of truth for what's been generated
     const nextDay = (plan.current_day || 0) + 1;
     const today = new Date().toISOString().split('T')[0];
     const isConflict = plan.conflict_avoidance_start && plan.conflict_avoidance_end &&
@@ -476,8 +478,8 @@ export default function DailyCheckIn() {
               </div>
             )}
 
-            {/* Next mission button */}
-            {currentRecord.status === "completed" && (
+            {/* Next mission button — shown when current day is done */}
+            {currentRecord.status === "completed" && plan.current_day === currentRecord.day_number && (
               <div className="mt-6">
                 <Button
                   onClick={generateNewDay}
