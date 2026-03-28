@@ -67,33 +67,40 @@ export default function SocraticChatPanel({ activePlan }) {
 
   const startConversation = async () => {
     setInitializing(true);
-    const conv = await base44.agents.createConversation({
-      agent_name: "learning_guide",
-      metadata: {
-        name: `Socratic Guide — ${activePlan?.program_name || "Learning"}`,
-        plan_id: activePlan?.id,
-      }
-    });
-    setConversation(conv);
+    try {
+      const conv = await base44.agents.createConversation({
+        agent_name: "learning_guide",
+        metadata: {
+          name: `Socratic Guide — ${activePlan?.program_name || "Learning"}`,
+          plan_id: activePlan?.id,
+        }
+      });
+      setConversation(conv);
 
-    // Send context-priming first message
-    const contextMsg = activePlan
-      ? `Context: The user is studying "${activePlan.program_name}". Their current foundation: "${activePlan.current_foundation}". They are on Day ${activePlan.current_day} of a ${activePlan.total_duration} plan. Their minimum goal: "${activePlan.minimum_goal}". Greet the user warmly, briefly explain your Socratic co-evolution approach (that you'll grow together with them), then ask what specific concept or difficulty they'd like to explore today.`
-      : `Greet the user warmly. Briefly explain your Socratic co-evolution approach, then ask what subject or difficulty they'd like to explore.`;
+      // Send context-priming first message
+      const contextMsg = activePlan
+        ? `Context: The user is studying "${activePlan.program_name}". Their current foundation: "${activePlan.current_foundation}". They are on Day ${activePlan.current_day} of a ${activePlan.total_duration} plan. Their minimum goal: "${activePlan.minimum_goal}". Greet the user warmly, briefly explain your Socratic co-evolution approach (that you'll grow together with them), then ask what specific concept or difficulty they'd like to explore today.`
+        : `Greet the user warmly. Briefly explain your Socratic co-evolution approach, then ask what subject or difficulty they'd like to explore.`;
 
-    const updated = await base44.agents.addMessage(conv, {
-      role: "user",
-      content: contextMsg,
-    });
+      const updated = await base44.agents.addMessage(conv, {
+        role: "user",
+        content: contextMsg,
+      });
 
-    setConversation(updated);
-    setMessages((updated?.messages || []).filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
-    setInitializing(false);
+      setConversation(updated);
+      setMessages((updated?.messages || []).filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
 
-    const unsubscribe = base44.agents.subscribeToConversation(updated.id, (data) => {
-      setMessages((data?.messages || []).filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
-    });
-    return () => unsubscribe();
+      const unsubscribe = base44.agents.subscribeToConversation(updated.id, (data) => {
+        setMessages((data?.messages || []).filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn("Failed to start conversation, resetting:", e);
+      setConversation(null);
+      setMessages([]);
+    } finally {
+      setInitializing(false);
+    }
   };
 
   const sendMessage = async () => {
