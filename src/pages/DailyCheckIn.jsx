@@ -188,10 +188,11 @@ export default function DailyCheckIn() {
       current_phase: isConflict ? "conflict_avoidance" : plan.current_phase
     });
 
-    queryClient.invalidateQueries({ queryKey: ['records'] });
-    queryClient.invalidateQueries({ queryKey: ['plans'] });
+    await queryClient.invalidateQueries({ queryKey: ['records', plan.id] });
+    await queryClient.invalidateQueries({ queryKey: ['plans'] });
     setLoading(false);
     setGenStatus("");
+    setViewMode("content");
   };
 
   const handleAnswerSubmit = async (answers) => {
@@ -247,8 +248,8 @@ export default function DailyCheckIn() {
       status: "completed"
     });
 
-    queryClient.invalidateQueries({ queryKey: ['records'] });
-    queryClient.invalidateQueries({ queryKey: ['errors'] });
+    await queryClient.invalidateQueries({ queryKey: ['records', plan.id] });
+    await queryClient.invalidateQueries({ queryKey: ['errors', plan.id] });
     setLoading(false);
     setGenStatus("");
     setViewMode("grading");
