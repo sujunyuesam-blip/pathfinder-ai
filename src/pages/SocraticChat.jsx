@@ -97,29 +97,35 @@ export default function SocraticChat() {
   }, [messages]);
 
   const initConversation = async () => {
-    // Cleanup any existing subscription
     if (unsubscribeRef.current) {
       unsubscribeRef.current();
       unsubscribeRef.current = null;
     }
     setInitializing(true);
-    const conv = await base44.agents.createConversation({
-      agent_name: "learning_guide",
-      metadata: { name: `Socratic Session`, plan_id: activePlan?.id }
-    });
+    try {
+      const conv = await base44.agents.createConversation({
+        agent_name: "learning_guide",
+        metadata: { name: `Socratic Session`, plan_id: activePlan?.id }
+      });
 
-    const contextMsg = activePlan
-      ? `Context: The user is studying "${activePlan.program_name}". Current foundation: "${activePlan.current_foundation}". Day ${activePlan.current_day} of ${activePlan.total_duration}. Goals: min="${activePlan.minimum_goal}", sprint="${activePlan.sprint_goal}". Greet the user warmly, briefly explain your Socratic co-evolution philosophy (that both of you will grow together through dialogue — no upper limit), then ask what specific concept or difficulty from their studies they'd like to explore today.`
-      : `Greet the user warmly. Briefly explain your Socratic co-evolution philosophy — that through structured dialogue, both the AI and user grow together with no upper limit. Ask what subject or difficulty they'd like to explore.`;
+      const contextMsg = activePlan
+        ? `Context: The user is studying "${activePlan.program_name}". Current foundation: "${activePlan.current_foundation}". Day ${activePlan.current_day} of ${activePlan.total_duration}. Goals: min="${activePlan.minimum_goal}", sprint="${activePlan.sprint_goal}". Greet the user warmly, briefly explain your Socratic co-evolution philosophy (that both of you will grow together through dialogue — no upper limit), then ask what specific concept or difficulty from their studies they'd like to explore today.`
+        : `Greet the user warmly. Briefly explain your Socratic co-evolution philosophy — that through structured dialogue, both the AI and user grow together with no upper limit. Ask what subject or difficulty they'd like to explore.`;
 
-    const updated = await base44.agents.addMessage(conv, { role: "user", content: contextMsg });
-    setConversation(updated);
-    setMessages((updated?.messages || []).filter(m => !(m.role === "user" && m.content?.startsWith("Context:"))));
-    setInitializing(false);
+      const updated = await base44.agents.addMessage(conv, { role: "user", content: contextMsg });
+      setConversation(updated);
+      setMessages((updated?.messages || []).filter(m => !(m.role === "user" && m.content?.startsWith("Context:"))));
 
-    unsubscribeRef.current = base44.agents.subscribeToConversation(updated.id, (data) => {
-      setMessages((data?.messages || []).filter(m => !(m.role === "user" && m.content?.startsWith("Context:"))));
-    });
+      unsubscribeRef.current = base44.agents.subscribeToConversation(updated.id, (data) => {
+        setMessages((data?.messages || []).filter(m => !(m.role === "user" && m.content?.startsWith("Context:"))));
+      });
+    } catch (e) {
+      console.warn("Failed to initialize conversation:", e);
+      setConversation(null);
+      setMessages([]);
+    } finally {
+      setInitializing(false);
+    }
   };
 
   useEffect(() => {
