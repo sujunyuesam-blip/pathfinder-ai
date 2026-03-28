@@ -142,12 +142,15 @@ export default function SocraticChat() {
     try {
       const updated = await base44.agents.addMessage(conversation, { role: "user", content: text });
       setConversation(updated);
+      setSending(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
     } catch (e) {
-      // Conversation no longer exists — reinitialize session
+      // Conversation no longer exists — reinitialize and re-send
+      setSending(false);
+      setConversation(null);
+      setMessages([]);
       await initConversation();
     }
-    setSending(false);
-    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   const handleKey = (e) => {
