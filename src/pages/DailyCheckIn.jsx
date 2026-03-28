@@ -204,8 +204,10 @@ export default function DailyCheckIn() {
       status: "pending_grading"
     });
     setGenStatus("⚔️ Grading your battle performance...");
+    // Truncate day content to avoid token limit / network timeout
+    const truncatedContent = (currentRecord.content || "").slice(0, 3000);
     const gradingResult = await base44.integrations.Core.InvokeLLM({
-      prompt: buildGradingPrompt(plan, currentRecord.content, answers.formatted, errors.slice(0, 10)),
+      prompt: buildGradingPrompt(plan, truncatedContent, answers.formatted, errors.slice(0, 5)),
     });
 
     let basicAccuracy = 0, advancedAccuracy = 0, newErrors = [];
