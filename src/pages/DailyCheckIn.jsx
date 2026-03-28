@@ -346,7 +346,7 @@ export default function DailyCheckIn() {
             <div className="flex gap-1.5 mb-5 bg-white rounded-xl p-1.5 shadow-sm border border-slate-100">
               {[
                 { key: "content", label: "📖 Study Content", show: true },
-                { key: "answers", label: "✏️ Submit Answers", show: currentRecord.status === "pending_answers" || currentRecord.status === "pending_grading" },
+                { key: "answers", label: "⚔️ Battle", show: currentRecord.status === "pending_answers" || currentRecord.status === "pending_grading" },
                 { key: "grading", label: "🏆 Results", show: !!currentRecord.grading_result }
               ].filter(t => t.show).map(tab => (
                 <button
