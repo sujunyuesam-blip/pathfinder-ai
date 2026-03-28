@@ -86,10 +86,12 @@ export default function SocraticChat() {
     return () => clearInterval(interval);
   }, []);
 
+  const initStartedRef = useRef(false);
+
   useEffect(() => {
-    if (plans.length > 0 || !initializing) {
-      initConversation();
-    }
+    if (initStartedRef.current) return;
+    initStartedRef.current = true;
+    initConversation();
   }, [plans]);
 
   useEffect(() => {
