@@ -90,10 +90,14 @@ export default function SocraticChatPanel({ activePlan }) {
       setConversation(updated);
       setMessages((updated?.messages || []).filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
 
-      const unsubscribe = base44.agents.subscribeToConversation(updated.id, (data) => {
-        setMessages((data?.messages || []).filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
-      });
-      return () => unsubscribe();
+      try {
+        const unsubscribe = base44.agents.subscribeToConversation(updated.id, (data) => {
+          setMessages((data?.messages || []).filter(m => m.role !== "user" || !m.content?.startsWith("Context:")));
+        });
+        return () => unsubscribe();
+      } catch (e) {
+        console.warn("Subscription failed, conversation may be stale:", e);
+      }
     } catch (e) {
       console.warn("Failed to start conversation, resetting:", e);
       setConversation(null);
