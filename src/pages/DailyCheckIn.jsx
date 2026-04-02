@@ -183,10 +183,14 @@ export default function DailyCheckIn() {
       });
     }
 
-    await base44.entities.LearningPlan.update(plan.id, {
-      current_day: nextDay,
-      current_phase: isConflict ? "conflict_avoidance" : plan.current_phase
-    });
+    // Verify plan still exists before updating
+    const freshPlans = await base44.entities.LearningPlan.list('-created_date', 1);
+    if (freshPlans[0]?.id === plan.id) {
+      await base44.entities.LearningPlan.update(plan.id, {
+        current_day: nextDay,
+        current_phase: isConflict ? "conflict_avoidance" : plan.current_phase
+      });
+    }
 
     await queryClient.invalidateQueries({ queryKey: ['records', plan.id] });
     await queryClient.invalidateQueries({ queryKey: ['plans'] });
@@ -198,6 +202,17 @@ export default function DailyCheckIn() {
   const handleAnswerSubmit = async (answers) => {
     if (!currentRecord || !plan) return;
     setLoading(true);
+
+    // Re-fetch the record to ensure it still exists before updating
+    const freshRecords = await base44.entities.CheckInRecord.filter({ plan_id: plan.id }, '-day_number', 1);
+    const freshRecord = freshRecords[0];
+    if (!freshRecord || freshRecord.id !== currentRecord.id) {
+      // Record no longer exists or changed, refresh and bail
+      await queryClient.invalidateQueries({ queryKey: ['records', plan.id] });
+      setLoading(false);
+      return;
+    }
+
     await base44.entities.CheckInRecord.update(currentRecord.id, {
       user_answers_basic: answers.basic,
       user_answers_advanced: answers.advanced,
