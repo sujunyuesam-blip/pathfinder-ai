@@ -1,15 +1,109 @@
 // Central prompt engine that holds the Main Prompt + 3 Sub-Prompts
 // and orchestrates the 3-model pipeline
+import { base44 } from "@/api/base44Client";
+
+/**
+ * PromptEngine class manages the context and prompts for the learning check-in loop. 
+ * It maintains a context history of all interactions, and provides methods to retrieve a refined context for LLM input, as well as to format prompts for the main agent and sub-agents. 
+ * context is stored as a dictionary with timestamps as keys, formats {timestamp: {action: actionName, content: content}}.
+ */
+class PromptEngine {
+  constructor() {
+    this.context = {};
+  }
+
+  addContext(timestamp, actionName, content) {
+    this.context[timestamp] = { "action": actionName, "content": content };
+  }
+
+  getContext(contextWindow = 128000) {
+    const summary = base44.integrations.Core.InvokeLLM({prompt: refineContextPrompt(JSON.stringify(this.context))});
+    this.addContext(Date.now(), "summarizeContext", summary);
+
+    if (JSON.stringify(this.context).length > contextWindow) {
+      this.context = Object.fromEntries(contextKeys.slice(-Math.floor(contextWindow / 5)).map(key => [key, this.context[key]])); // keep the most recent context within the window, assuming average 5 tokens per entry
+    }
+    this.addContext(Date.now(), "sliceContext", `slice context to fit within ${contextWindow} tokens`);
+    
+    return this.context;
+  }
+}
+
+/**
+ * 
+ * @param {*} prompt: a prompt object containing all necessary fields for the prompt, 
+ *   ideally with a structure like {missionStatement: ..., instructions: ..., artifacts: ..., outputScheme: ...};
+ * 
+ * @returns stringified prompt with json formatting for LLM input
+ */
+
+export function promptFormat(prompt) {
+  if (!prompt.missionStatement || !prompt.instructions || !prompt.artifacts || !prompt.outputScheme) {
+    console.warn('Prompt object is missing required fields');
+  }
+  return JSON.stringify(prompt, null, 2);
+}
+
+export function buildAgentMissionStatement() {
+  return `You are an agent in The Pathfinder AI. 
+  The Pathfinder AI project is a research and development effort to develop an AI-integrated learning platform that prioritizes personalization and long-term sustainability, looking to achieve those goals through effective use of AI agents.
+  With whatever tasks you are assigned, always keep in mind the core mission of The Pathfinder AI: to create a highly personalized, sustainable learning experience that helps users achieve their learning goals.`;
+}
+
+export function buildAgentOutputScheme(subAgent=false, callsSubAgent=false) {
+  const outputSchemePrompt = `All your outputs must strictly follow the fixed format required. 
+  Concise and clear content is highly valued. Avoid any redundant or irrelevant information.`;
+
+  const mainAgentOutputSchemePrompt = `As the Main Agent, your output must strictly follow the fixed format required.
+  You are responsible for the user's learning experience, so mind that.
+  Conciseness is highly valued.
+  
+  As the Main Agent, you have the authority to call on Sub-Agents for specific tasks. 
+  When you do so, you must provide them with clear instructions and the necessary context to complete their tasks effectively. 
+  Note that the Sub-Agents might have questions for you, and you should be responsive to their requests for clarification or additional information.
+  `;
+
+  const subAgentOutputSchemePrompt = `As a Sub-Agent, your output will be directly fed into the main prompt's final content.
+  So think carefully. Your task is to assist the main agent in the most effective way possible, by providing content that is consice and informative.
+  Short answers are encouraged.
+  
+  As the Sub-Agent, you also have another privilage: you can ask the main agent for specification on the task if you find that necessary.
+  That is for the alignment of your output with the main agent's needs, which is also encouraged.`
+
+  return callsSubAgent ? mainAgentOutputSchemePrompt : subAgent ? subAgentOutputSchemePrompt : outputSchemePrompt;
+}
+
+export function refineContextPrompt(context, purpose=null) {
+  const outPrompt = {};
+
+  const missionStatement = buildAgentMissionStatement();
+  outPrompt.missionStatement = missionStatement;
+
+  const instructions = `The following is the context for whatever that has happened since the initialization of the user's learning plan. 
+  This context may include how the user has been doing, what their recent struggles are, and how you have been generating content for them. 
+  However, this context may be noisy containing redundant information. Your task is to refine this context, extracting the most relevant and important information that you need to know to generate further suitable content for the user.`
+
+  const purpose_instructions = `The following is the context for whatever that has happened since the initialization of the user's learning plan. 
+  This context may include how the user has been doing, what their recent struggles are, and how you have been generating content for them. 
+  However, this context may be noisy containing redundant information. Your task is to refine this context, extracting the most relevant and important information that is relevant to the following purpose. Only extract information that is relevant to the purpose, and discard the rest.`
+  
+  outPrompt.instructions = purpose ? purpose_instructions : instructions;
+
+  outPrompt.artifacts = {"context": context, "purpose": purpose};
+
+  outPrompt.outputScheme = buildAgentOutputScheme();
+
+  return promptFormat(outPrompt);
+}
 
 export function buildUserContext(plan) {
-  return `
-【Learning Program】${plan.program_name}
-【User's Current Foundation】${plan.current_foundation}
-【Planned Total Duration】${plan.total_duration} (Starting: ${plan.start_date || 'TBD'})
-【Minimum Goal】${plan.minimum_goal}
-【Sprint Goal】${plan.sprint_goal}
-【Conflict Avoidance Time】${plan.conflict_avoidance_start || 'None'} to ${plan.conflict_avoidance_end || 'None'} (${plan.conflict_reason || 'N/A'})
-【Daily Available Duration】${plan.daily_available_minutes} minutes
+  return `[Learning Program]${plan.program_name}
+[User's Current Foundation]${plan.current_foundation}
+[Planned Total Duration]${plan.total_duration} (Starting: ${plan.start_date || 'TBD'})
+[Minimum Goal]${plan.minimum_goal}
+[Sprint Goal]${plan.sprint_goal}
+[Conflict Avoidance Time]${plan.conflict_avoidance_start || 'None'} to ${plan.conflict_avoidance_end || 'None'} (${plan.conflict_reason || 'N/A'})
+[Daily Available Duration]${plan.daily_available_minutes} minutes
   `.trim();
 }
 
@@ -217,13 +311,13 @@ Generate in this EXACT sequence, every module required:
 
 ### Group 1: Basic Minimum Questions (10 questions)
 (100% corresponding to Part 1 content explained above. Mark corresponding knowledge point for each question.)
-1. [Question] 【Knowledge Point: ...】
+1. [Question] [Knowledge Point: ...]
 2. ...
 (Continue to 10)
 
 ### Group 2: Advanced Sprint Questions (5 questions)
 (100% corresponding to Part 2 content explained above. Mark corresponding knowledge point for each question.)
-1. [Question] 【Knowledge Point: ...】
+1. [Question] [Knowledge Point: ...]
 2. ...
 (Continue to 5)
 
@@ -407,4 +501,33 @@ Review: 1___ 2___ 3___ ...
 - If you have extra time, optionally review the error book
 
 After output, self-check. Regenerate if any fail.`;
+}
+
+export function buildSubmitPostPrompt(title, content) {
+  return `You are an AI moderator for a Socratic learning forum. Examine the following post and decide if it is valuable and promotes genuine intellectual inquiry.
+
+Criteria for approval:
+- Promotes deep thinking or challenges assumptions
+- Relevant to academics, critical thinking, or intellectual growth
+- Has enough substance to spark real discussion
+- Is NOT vague, spam, or off-topic
+
+Post Title: "${title}"
+Post Content: "${content}"
+
+Respond in JSON.`;
+}
+
+export function buildParticipateInDiscussionPrompt(post, ctx, user, text) {
+  return `You are a Socratic AI participating in an educational forum.
+
+Post: "${post.title}"
+Context: "${post.content}"
+
+Recent discussion:
+${ctx}
+
+Latest from ${user?.full_name || "student"}: "${text}"
+
+Reply in a Socratic manner: ask probing questions, surface hidden assumptions, guide toward deeper insight. Be concise (2-4 sentences). Use markdown sparingly for emphasis.`;
 }
