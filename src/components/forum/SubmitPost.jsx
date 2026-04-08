@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
+import { buildSubmitPostPrompt } from "../learning/PromptEngine";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -18,18 +19,7 @@ export default function SubmitPost({ user, onSuccess }) {
     setPhase("examining");
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are an AI moderator for a Socratic learning forum. Examine the following post and decide if it is valuable and promotes genuine intellectual inquiry.
-
-Criteria for approval:
-- Promotes deep thinking or challenges assumptions
-- Relevant to academics, critical thinking, or intellectual growth
-- Has enough substance to spark real discussion
-- Is NOT vague, spam, or off-topic
-
-Post Title: "${title}"
-Post Content: "${content}"
-
-Respond in JSON.`,
+      prompt: buildSubmitPostPrompt(title, content),
       response_json_schema: {
         type: "object",
         properties: {
