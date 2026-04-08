@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Bot, ThumbsUp, Send, Loader2, Zap, MessageCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { formatDistanceToNow } from "date-fns";
+import { buildParticipateInDiscussionPrompt } from "../learning/PromptEngine";
 
 function Comment({ comment, user, onUpvote }) {
   const hasUpvoted = Array.isArray(comment.upvoted_by) && user?.email && comment.upvoted_by.includes(user.email);
@@ -113,17 +114,7 @@ export default function PostDetail({ postId, user, onBack }) {
       try {
         const ctx = comments.slice(-4).map(c => `${c.is_ai ? "AI" : c.author_name}: ${c.content}`).join("\n");
         const aiReply = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are a Socratic AI participating in an educational forum.
-
-Post: "${post.title}"
-Context: "${post.content}"
-
-Recent discussion:
-${ctx}
-
-Latest from ${user?.full_name || "student"}: "${text}"
-
-Reply in a Socratic manner: ask probing questions, surface hidden assumptions, guide toward deeper insight. Be concise (2-4 sentences). Use markdown sparingly for emphasis.`,
+          prompt: buildParticipateInDiscussionPrompt(post, ctx, user, text),
           model: "claude_sonnet_4_6"
         });
         await base44.entities.ForumComment.create({
