@@ -21,6 +21,7 @@ class PromptEngine {
     this.addContext(Date.now(), "summarizeContext", summary);
 
     if (JSON.stringify(this.context).length > contextWindow) {
+      const contextKeys = Object.keys(this.context);
       this.context = Object.fromEntries(contextKeys.slice(-Math.floor(contextWindow / 5)).map(key => [key, this.context[key]])); // keep the most recent context within the window, assuming average 5 tokens per entry
     }
     this.addContext(Date.now(), "sliceContext", `slice context to fit within ${contextWindow} tokens`);

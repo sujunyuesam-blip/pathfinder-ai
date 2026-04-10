@@ -96,7 +96,7 @@ export default function SocraticChatPanel({ activePlan }) {
         });
         return () => unsubscribe();
       } catch (e) {
-        console.warn("Subscription failed, conversation may be stale:", e);
+        console.warn("Subscription failed:", e);
       }
     } catch (e) {
       console.warn("Failed to start conversation, resetting:", e);
@@ -120,6 +120,7 @@ export default function SocraticChatPanel({ activePlan }) {
       setConversation(updated);
     } catch (e) {
       // Conversation no longer exists — reinitialize
+      console.warn("Conversation stale, reinitializing:", e);
       setConversation(null);
       setMessages([]);
       setSending(false);
