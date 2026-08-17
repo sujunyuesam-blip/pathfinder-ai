@@ -1,0 +1,104 @@
+{
+  "name": "CheckInRecord",
+  "type": "object",
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "description": "Reference to LearningPlan"
+    },
+    "day_number": {
+      "type": "number",
+      "description": "Day number in the plan"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "scenario_type": {
+      "type": "string",
+      "enum": [
+        "daily_checkin",
+        "answer_grading",
+        "conflict_avoidance"
+      ],
+      "description": "Type of check-in scenario"
+    },
+    "content": {
+      "type": "string",
+      "description": "Generated check-in content (markdown)"
+    },
+    "user_answers_basic": {
+      "type": "string",
+      "description": "User submitted answers for basic questions"
+    },
+    "user_answers_advanced": {
+      "type": "string",
+      "description": "User submitted answers for advanced questions"
+    },
+    "grading_result": {
+      "type": "string",
+      "description": "Generated grading and error analysis content"
+    },
+    "basic_accuracy": {
+      "type": "number",
+      "description": "Accuracy rate for basic questions (0-100)"
+    },
+    "advanced_accuracy": {
+      "type": "number",
+      "description": "Accuracy rate for advanced questions (0-100)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_study",
+        "pending_answers",
+        "pending_grading",
+        "completed"
+      ],
+      "default": "pending_study"
+    }
+  },
+  "required": [
+    "plan_id",
+    "day_number"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

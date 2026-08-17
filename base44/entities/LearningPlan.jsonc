@@ -1,0 +1,123 @@
+{
+  "name": "LearningPlan",
+  "type": "object",
+  "properties": {
+    "program_name": {
+      "type": "string",
+      "description": "Full name of learning program (e.g. NEC Economics, AP Macroeconomics)"
+    },
+    "current_foundation": {
+      "type": "string",
+      "description": "User's current mastery level and completed stages"
+    },
+    "total_duration": {
+      "type": "string",
+      "description": "Total preparation period (e.g. 8 weeks, 3 months)"
+    },
+    "minimum_goal": {
+      "type": "string",
+      "description": "Quantifiable minimum target"
+    },
+    "sprint_goal": {
+      "type": "string",
+      "description": "Quantifiable elevated target"
+    },
+    "conflict_avoidance_start": {
+      "type": "string",
+      "format": "date",
+      "description": "Start date of conflict avoidance period"
+    },
+    "conflict_avoidance_end": {
+      "type": "string",
+      "format": "date",
+      "description": "End date of conflict avoidance period"
+    },
+    "conflict_reason": {
+      "type": "string",
+      "description": "Reason for conflict avoidance (e.g. AP major exam)"
+    },
+    "daily_available_minutes": {
+      "type": "number",
+      "description": "Daily available study time in minutes"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Plan start date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "completed"
+      ],
+      "default": "active"
+    },
+    "full_plan_content": {
+      "type": "string",
+      "description": "Generated full-cycle learning plan (Scenario 1 output)"
+    },
+    "current_day": {
+      "type": "number",
+      "default": 1,
+      "description": "Current day number in the plan"
+    },
+    "current_phase": {
+      "type": "string",
+      "enum": [
+        "intensive",
+        "conflict_avoidance",
+        "final_sprint"
+      ],
+      "default": "intensive"
+    }
+  },
+  "required": [
+    "program_name",
+    "current_foundation",
+    "total_duration",
+    "minimum_goal",
+    "sprint_goal",
+    "daily_available_minutes"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

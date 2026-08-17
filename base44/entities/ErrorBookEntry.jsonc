@@ -1,0 +1,101 @@
+{
+  "name": "ErrorBookEntry",
+  "type": "object",
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "description": "Reference to LearningPlan"
+    },
+    "error_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "day_number": {
+      "type": "number"
+    },
+    "original_question": {
+      "type": "string",
+      "description": "Full original question text"
+    },
+    "question_condensed": {
+      "type": "string",
+      "description": "Condensed core stem (max 100 words)"
+    },
+    "user_answer": {
+      "type": "string"
+    },
+    "correct_answer": {
+      "type": "string"
+    },
+    "error_reason": {
+      "type": "string",
+      "description": "Root cause of error"
+    },
+    "core_test_point": {
+      "type": "string",
+      "description": "Corresponding exam point name"
+    },
+    "question_type": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "advanced"
+      ]
+    },
+    "review_completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "error_count": {
+      "type": "number",
+      "default": 1
+    }
+  },
+  "required": [
+    "plan_id",
+    "original_question",
+    "user_answer",
+    "correct_answer",
+    "error_reason",
+    "core_test_point"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

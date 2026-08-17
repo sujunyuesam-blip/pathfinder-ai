@@ -1,0 +1,35 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "app_role": {
+      "type": "string",
+      "enum": [
+        "student",
+        "teacher"
+      ],
+      "default": "student",
+      "description": "Whether this user is a student or teacher"
+    },
+    "phone_number": {
+      "type": "string",
+      "description": "User's phone number"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "User's display name"
+    }
+  },
+  "required": [
+    "phone_number",
+    "display_name"
+  ]
+}

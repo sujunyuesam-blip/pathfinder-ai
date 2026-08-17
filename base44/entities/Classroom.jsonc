@@ -1,0 +1,75 @@
+{
+  "name": "Classroom",
+  "type": "object",
+  "properties": {
+    "teacher_email": {
+      "type": "string",
+      "description": "Email of the teacher who owns this class"
+    },
+    "teacher_name": {
+      "type": "string"
+    },
+    "class_code": {
+      "type": "string",
+      "description": "Unique 6-char code students use to join"
+    },
+    "class_name": {
+      "type": "string",
+      "description": "Display name of the class"
+    },
+    "student_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Emails of enrolled students"
+    }
+  },
+  "required": [
+    "teacher_email",
+    "class_code",
+    "class_name"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "data.teacher_email": "{{user.email}}"
+        },
+        {
+          "data.student_emails": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.teacher_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.teacher_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

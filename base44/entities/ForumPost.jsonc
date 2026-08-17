@@ -1,0 +1,99 @@
+{
+  "name": "ForumPost",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "user_direct",
+        "ai_published",
+        "from_conversation"
+      ],
+      "default": "user_direct"
+    },
+    "author_email": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ai_approved": {
+      "type": "boolean",
+      "default": false
+    },
+    "ai_review_note": {
+      "type": "string"
+    },
+    "upvotes": {
+      "type": "number",
+      "default": 0
+    },
+    "upvoted_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "xp_reward": {
+      "type": "number",
+      "default": 50
+    },
+    "view_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "title",
+    "content"
+  ],
+  "rls": {
+    "create": {},
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
